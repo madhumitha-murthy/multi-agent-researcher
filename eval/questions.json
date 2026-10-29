@@ -1,0 +1,12 @@
+[
+  {"id": "q01", "question": "Compare recent approaches to reducing hallucinations in LLMs", "category": "comparison", "expect_multi_source": true},
+  {"id": "q02", "question": "What are the latest methods for parameter-efficient fine-tuning?", "category": "survey", "expect_multi_source": true},
+  {"id": "q03", "question": "How are LLMs being used for code generation and what are the limitations?", "category": "survey", "expect_multi_source": true},
+  {"id": "q04", "question": "What progress has been made in multi-agent LLM systems?", "category": "survey", "expect_multi_source": true},
+  {"id": "q05", "question": "Compare retrieval-augmented generation approaches for question answering", "category": "comparison", "expect_multi_source": true},
+  {"id": "q06", "question": "What are current approaches to evaluating LLM safety and alignment?", "category": "survey", "expect_multi_source": true},
+  {"id": "q07", "question": "How is reinforcement learning from human feedback being improved?", "category": "survey", "expect_multi_source": true},
+  {"id": "q08", "question": "What are the recent advances in vision-language models?", "category": "survey", "expect_multi_source": true},
+  {"id": "q09", "question": "Compare different architectures for long-context language models", "category": "comparison", "expect_multi_source": true},
+  {"id": "q10", "question": "What is the best recipe for laksa?", "category": "out_of_scope", "expect_multi_source": false}
+]

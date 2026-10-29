@@ -1,0 +1,8 @@
+langgraph
+google-genai
+python-dotenv
+arxiv
+requests
+sentence-transformers
+duckduckgo-search
+beautifulsoup4
