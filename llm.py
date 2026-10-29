@@ -1,6 +1,7 @@
 # llm.py - Gemini wrapper with rate limiting + FakeModel for tests
 
 import os
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Protocol
@@ -27,12 +28,14 @@ class GeminiModel:
         self.model = model
         self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
         self._last_call = 0.0
+        self._lock = threading.Lock()
 
     def _rate_limit(self):
-        elapsed = time.time() - self._last_call
-        if elapsed < GEMINI_RATE_DELAY:
-            time.sleep(GEMINI_RATE_DELAY - elapsed)
-        self._last_call = time.time()
+        with self._lock:
+            elapsed = time.time() - self._last_call
+            if elapsed < GEMINI_RATE_DELAY:
+                time.sleep(GEMINI_RATE_DELAY - elapsed)
+            self._last_call = time.time()
 
     def call(self, system: str, messages: list[dict], tools: list | None = None) -> ModelResponse:
         from google.genai import types
@@ -57,11 +60,19 @@ class GeminiModel:
                 ])
             ]
 
-        resp = self.client.models.generate_content(
-            model=self.model,
-            contents=self._build_contents(messages),
-            config=config,
-        )
+        for attempt in range(3):
+            try:
+                resp = self.client.models.generate_content(
+                    model=self.model,
+                    contents=self._build_contents(messages),
+                    config=config,
+                )
+                break
+            except Exception as e:
+                if "503" in str(e) and attempt < 2:
+                    time.sleep(10 * (attempt + 1))  # 10s, 20s backoff
+                    continue
+                raise
 
         content = resp.candidates[0].content
         calls = [

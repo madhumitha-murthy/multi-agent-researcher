@@ -1,0 +1,440 @@
+{
+  "question": "What are recent advances in multi-modal AI combining vision and language?",
+  "report": "## Overview\nRecent advances in multimodal AI combining vision and language show a shift toward scaling general-purpose reasoning models, domain-specific adaptations, and embodied interaction. Researchers are moving beyond simple image-text matching to deep multimodal reasoning and Vision-Language-Action (VLA) models that interact with physical environments. These developments span general benchmarks, specialized fields like pathology and localized finance, and efficient robotics architectures.\n\n## Key Findings\n- **High-performing general foundation models**: Large-scale multimodal models such as Seed1.5-VL achieve state-of-the-art results across broad reasoning and multimodal understanding benchmarks [ByteDance-Seed/Seed1.5-VL].\n- **Expansion into Embodied AI and VLA**: Vision and language are increasingly coupled with robotic actions through world-model-driven systems [open-gigaai/giga-brain-0], modular development frameworks [starVLA/starVLA], and open-world agents [dexmal/opendm].\n- **Parameter-efficient adaptation**: Methods such as VLA-Adapter enable tiny-scale vision-language-action models [OpenHelix-Team/VLA-Adapter], while LoRA is applied to multimodal Chain-of-Thought (CoT) finetuning for specialized localized domains [Okoth67/wekeza_v6_lora_multimodal_cot_finetuning].\n- **Domain-specific multimodal foundations**: Specialized vision-language datasets and models are emerging in healthcare for tasks like Vietnamese PET/CT report generation [AIoT-Lab-AI4LIFE/ViPET-ReportGen] and computational pathology [dibalokechanda/PFMs].\n\n## Approaches Compared\nThe provided sources illustrate three primary paradigms: massive general-purpose foundation models designed for broad reasoning benchmarks [ByteDance-Seed/Seed1.5-VL], parameter-efficient fine-tuning (e.g., LoRA and adapters) for localized or resource-constrained settings [OpenHelix-Team/VLA-Adapter, Okoth67/wekeza_v6_lora_multimodal_cot_finetuning], and embodied systems that couple visual-linguistic inputs with action policies or world models [open-gigaai/giga-brain-0, starVLA/starVLA]. While general models prioritize benchmark coverage, embodied and domain-adapted approaches emphasize lightweight deployment and task-specific policy generation.\n\n## Gaps & Open Questions\nBecause several sources are codebases, catalogs, or curated lists rather than full technical studies, comparative empirical metrics across different model families are limited in the provided data. Open challenges remain regarding how effectively tiny-scale adapters bridge the gap to full-scale foundation models in complex environments [OpenHelix-Team/VLA-Adapter]. Additionally, generalizability from specialized domains (such as PET/CT report generation or computational pathology) to broader clinical and real-world settings requires further investigation [AIoT-Lab-AI4LIFE/ViPET-ReportGen, dibalokechanda/PFMs].\n\n## References\n1. ByteDance-Seed/Seed1.5-VL - https://github.com/ByteDance-Seed/Seed1.5-VL\n2. AIoT-Lab-AI4LIFE/ViPET-ReportGen - https://github.com/AIoT-Lab-AI4LIFE/ViPET-ReportGen\n3. dibalokechanda/PFMs - https://github.com/dibalokechanda/PFMs\n4. PathologyFMs/PathologyFMs.github.io - https://github.com/PathologyFMs/PathologyFMs.github.io\n5. What is Multimodal AI? | IBM - https://www.ibm.com/think/topics/multimodal-ai\n6. Multimodal learning - Wikipedia - https://en.wikipedia.org/wiki/Multimodal_learning\n7. MULTIMODAL | English meaning - Cambridge Dictionary - https://dictionary.cambridge.org/dictionary/english/multimodal\n8. MULTIMODAL Definition & Meaning - Merriam-Webster - https://www.merriam-webster.com/dictionary/multimodal\n9. Multimodal Machine Learning - GeeksforGeeks - https://www.geeksforgeeks.org/machine-learning/multimodal-machine-learning/\n10. National Multimodal LLM Programme | IMDA - https://www.imda.gov.sg/about-imda/emerging-technologies-and-research/national-multimodal-llm-programme\n11. Okoth67/wekeza_v6_lora_multimodal_cot_finetuning - https://github.com/Okoth67/wekeza_v6_lora_multimodal_cot_finetuning\n12. starVLA/starVLA - https://github.com/starVLA/starVLA\n13. jonyzhang2023/awesome-embodied-vla-va-vln - https://github.com/jonyzhang2023/awesome-embodied-vla-va-vln\n14. open-gigaai/giga-brain-0 - https://github.com/open-gigaai/giga-brain-0\n15. OpenHelix-Team/VLA-Adapter - https://github.com/OpenHelix-Team/VLA-Adapter\n16. dexmal/opendm - https://github.com/dexmal/opendm",
+  "papers": [
+    {
+      "title": "ByteDance-Seed/Seed1.5-VL",
+      "abstract": "Seed1.5-VL, a vision-language foundation model designed to advance general-purpose multimodal understanding and reasoning, achieving state-of-the-art performance on 38 out of 60 public benchmarks.",
+      "url": "https://github.com/ByteDance-Seed/Seed1.5-VL",
+      "source": "github",
+      "stars": 1593,
+      "language": "Jupyter Notebook"
+    },
+    {
+      "title": "AIoT-Lab-AI4LIFE/ViPET-ReportGen",
+      "abstract": "[NeurIPS 2025] Toward a Vision-Language Foundation Model for Medical Data: Multimodal Dataset and Benchmarks for Vietnamese PET/CT Report Generation",
+      "url": "https://github.com/AIoT-Lab-AI4LIFE/ViPET-ReportGen",
+      "source": "github",
+      "stars": 15,
+      "language": "Jupyter Notebook"
+    },
+    {
+      "title": "dibalokechanda/PFMs",
+      "abstract": "A curated catalog of pathology foundation models for computational pathology; tile & slide vision encoders, vision-language, multimodal & generative models, with papers, code & benchmarks.",
+      "url": "https://github.com/dibalokechanda/PFMs",
+      "source": "github",
+      "stars": 2,
+      "language": "JavaScript"
+    },
+    {
+      "title": "PathologyFMs/PathologyFMs.github.io",
+      "abstract": "A curated catalog of pathology foundation models for computational pathology; tile & slide vision encoders, vision-language, multimodal & generative models, with papers, code & benchmarks.",
+      "url": "https://github.com/PathologyFMs/PathologyFMs.github.io",
+      "source": "github",
+      "stars": 1,
+      "language": "JavaScript"
+    },
+    {
+      "title": "What is Multimodal AI? | IBM",
+      "abstract": "Jul 15, 2024 \u00b7 Multimodal AI refers to machine learning models capable of processing and integrating information from multiple \u2026",
+      "url": "https://www.ibm.com/think/topics/multimodal-ai",
+      "source": "web"
+    },
+    {
+      "title": "Multimodal learning - Wikipedia",
+      "abstract": "Multimodal learning is a type of deep learning that integrates and processes multiple types of data, referred to as modalities, such as \u2026",
+      "url": "https://en.wikipedia.org/wiki/Multimodal_learning",
+      "source": "web"
+    },
+    {
+      "title": "MULTIMODAL | English meaning - Cambridge Dictionary",
+      "abstract": "A multimodal agent may do this in multiple ways: through speech and intonation, facial expression and gaze, gesture, body \u2026",
+      "url": "https://dictionary.cambridge.org/dictionary/english/multimodal",
+      "source": "web"
+    },
+    {
+      "title": "MULTIMODAL Definition & Meaning - Merriam-Webster",
+      "abstract": "Sep 25, 2026 \u00b7 The meaning of MULTIMODAL is having or involving several modes, modalities, or maxima. How to use multimodal \u2026",
+      "url": "https://www.merriam-webster.com/dictionary/multimodal",
+      "source": "web"
+    },
+    {
+      "title": "Multimodal Machine Learning - GeeksforGeeks",
+      "abstract": "Jul 23, 2025 \u00b7 Multimodal Machine Learning refers to the use of multiple data types such as text, images, audio and video or \u2026",
+      "url": "https://www.geeksforgeeks.org/machine-learning/multimodal-machine-learning/",
+      "source": "web"
+    },
+    {
+      "title": "National Multimodal LLM Programme | IMDA",
+      "abstract": "Discover how Singapore\u2019s AI initiatives, driven by the National Multimodal LLM Programme, are shaping a more inclusive and \u2026",
+      "url": "https://www.imda.gov.sg/about-imda/emerging-technologies-and-research/national-multimodal-llm-programme",
+      "source": "web"
+    },
+    {
+      "title": "Okoth67/wekeza_v6_lora_multimodal_cot_finetuning",
+      "abstract": "Fine-tuning the Wekeza LLM using LoRA on multimodal Chain-of-Thought (CoT) instructions for Kenyan finance tasks.",
+      "url": "https://github.com/Okoth67/wekeza_v6_lora_multimodal_cot_finetuning",
+      "source": "github",
+      "stars": 0,
+      "language": "Jupyter Notebook"
+    },
+    {
+      "title": "starVLA/starVLA",
+      "abstract": "StarVLA: A Lego-like Codebase for Vision-Language-Action Model Developing",
+      "url": "https://github.com/starVLA/starVLA",
+      "source": "github",
+      "stars": 3881,
+      "language": "Python"
+    },
+    {
+      "title": "jonyzhang2023/awesome-embodied-vla-va-vln",
+      "abstract": "A curated list of state-of-the-art research in embodied AI, focusing on vision-language-action (VLA) models, vision-language navigation (VLN), and related multimodal learning approaches. ",
+      "url": "https://github.com/jonyzhang2023/awesome-embodied-vla-va-vln",
+      "source": "github",
+      "stars": 3614,
+      "language": null
+    },
+    {
+      "title": "open-gigaai/giga-brain-0",
+      "abstract": "GigaBrain-0: A World Model-Powered Vision-Language-Action Model",
+      "url": "https://github.com/open-gigaai/giga-brain-0",
+      "source": "github",
+      "stars": 2666,
+      "language": "Python"
+    },
+    {
+      "title": "OpenHelix-Team/VLA-Adapter",
+      "abstract": "VLA-Adapter: An Effective Paradigm for Tiny-Scale Vision-Language-Action Model",
+      "url": "https://github.com/OpenHelix-Team/VLA-Adapter",
+      "source": "github",
+      "stars": 2337,
+      "language": "Python"
+    },
+    {
+      "title": "dexmal/opendm",
+      "abstract": "An Open-World Foundation Model for General-Purpose Embodied Intelligence.",
+      "url": "https://github.com/dexmal/opendm",
+      "source": "github",
+      "stars": 2248,
+      "language": "Python"
+    }
+  ],
+  "critic_rounds": 1,
+  "grounding": {
+    "grounded": true,
+    "reason": "ok",
+    "supported_fraction": 0.893,
+    "sentences_checked": 28,
+    "min_score": 0.213
+  },
+  "trace": [
+    {
+      "agent": "planner",
+      "sub_tasks": [
+        "recent breakthroughs in vision language foundation models architectures and benchmarks 2023 2024",
+        "advancements in multimodal visual instruction tuning and chain-of-thought reasoning",
+        "vision language action models and video multimodal AI developments"
+      ],
+      "latency_s": 6.01
+    },
+    {
+      "agent": "collectors_batch",
+      "n_collectors": 3,
+      "total_papers": 16,
+      "latency_s": 109.01,
+      "details": [
+        {
+          "agent": "collector",
+          "sub_task": "recent breakthroughs in vision language foundation models architectures and benchmarks 2023 2024",
+          "papers_found": 4,
+          "calls_used": 4,
+          "trace": [
+            {
+              "tool": "search_arxiv",
+              "args": {
+                "query": "vision language foundation models architecture benchmark survey 2023 2024",
+                "max_results": 6
+              },
+              "error": "search_arxiv failed: Page request resulted in HTTP 429 (https://export.arxiv.org/api/query?search_query=%28vision+language+foundation+models+architecture+benchmark+survey+2023+2024%29+AND+%28cat%3Acs.AI+OR+cat%3Acs.CL+OR+cat%3Acs.LG+OR+cat%3Acs.IR%29&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=100)"
+            },
+            {
+              "tool": "search_semantic_scholar",
+              "args": {
+                "year": "2023-2024",
+                "query": "vision language foundation models multimodal architectures benchmarks survey",
+                "max_results": 6
+              },
+              "result": [
+                {
+                  "error": "Semantic Scholar API failed: 429 Client Error:  for url: https://api.semanticscholar.org/graph/v1/paper/search?query=vision+language+foundation+models+multimodal+architectures+benchmarks+survey&limit=6&fields=title%2Cabstract%2Curl%2Cyear%2CcitationCount%2Cauthors&year=2023-2024"
+                }
+              ]
+            },
+            {
+              "tool": "search_github",
+              "args": {
+                "max_results": 5,
+                "query": "vision language foundation models multimodal benchmarks"
+              },
+              "result": [
+                {
+                  "title": "ByteDance-Seed/Seed1.5-VL",
+                  "abstract": "Seed1.5-VL, a vision-language foundation model designed to advance general-purpose multimodal understanding and reasoning, achieving state-of-the-art performance on 38 out of 60 public benchmarks.",
+                  "url": "https://github.com/ByteDance-Seed/Seed1.5-VL",
+                  "source": "github",
+                  "stars": 1593,
+                  "language": "Jupyter Notebook"
+                },
+                {
+                  "title": "AIoT-Lab-AI4LIFE/ViPET-ReportGen",
+                  "abstract": "[NeurIPS 2025] Toward a Vision-Language Foundation Model for Medical Data: Multimodal Dataset and Benchmarks for Vietnamese PET/CT Report Generation",
+                  "url": "https://github.com/AIoT-Lab-AI4LIFE/ViPET-ReportGen",
+                  "source": "github",
+                  "stars": 15,
+                  "language": "Jupyter Notebook"
+                },
+                {
+                  "title": "dibalokechanda/PFMs",
+                  "abstract": "A curated catalog of pathology foundation models for computational pathology; tile & slide vision encoders, vision-language, multimodal & generative models, with papers, code & benchmarks.",
+                  "url": "https://github.com/dibalokechanda/PFMs",
+                  "source": "github",
+                  "stars": 2,
+                  "language": "JavaScript"
+                },
+                {
+                  "title": "PathologyFMs/PathologyFMs.github.io",
+                  "abstract": "A curated catalog of pathology foundation models for computational pathology; tile & slide vision encoders, vision-language, multimodal & generative models, with papers, code & benchmarks.",
+                  "url": "https://github.com/PathologyFMs/PathologyFMs.github.io",
+                  "source": "github",
+                  "stars": 1,
+                  "language": "JavaScript"
+                }
+              ]
+            },
+            {
+              "tool": "search_web",
+              "args": {
+                "max_results": 8,
+                "query": "\"vision-language foundation models\" OR \"multimodal foundation models\" survey architectures benchmarks 2023 2024 paper"
+              },
+              "result": []
+            },
+            {
+              "action": "answer",
+              "text": ""
+            }
+          ]
+        },
+        {
+          "agent": "collector",
+          "sub_task": "advancements in multimodal visual instruction tuning and chain-of-thought reasoning",
+          "papers_found": 7,
+          "calls_used": 4,
+          "trace": [
+            {
+              "tool": "search_semantic_scholar",
+              "args": {
+                "year": "2023-",
+                "query": "multimodal visual instruction tuning chain-of-thought reasoning",
+                "max_results": 6
+              },
+              "result": [
+                {
+                  "error": "Semantic Scholar API failed: 429 Client Error:  for url: https://api.semanticscholar.org/graph/v1/paper/search?query=multimodal+visual+instruction+tuning+chain-of-thought+reasoning&limit=6&fields=title%2Cabstract%2Curl%2Cyear%2CcitationCount%2Cauthors&year=2023-"
+                }
+              ]
+            },
+            {
+              "tool": "search_arxiv",
+              "args": {
+                "max_results": 6,
+                "query": "multimodal visual instruction tuning chain of thought reasoning"
+              },
+              "error": "search_arxiv failed: Page request resulted in HTTP 429 (https://export.arxiv.org/api/query?search_query=%28multimodal+visual+instruction+tuning+chain+of+thought+reasoning%29+AND+%28cat%3Acs.AI+OR+cat%3Acs.CL+OR+cat%3Acs.LG+OR+cat%3Acs.IR%29&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=100)"
+            },
+            {
+              "tool": "search_web",
+              "args": {
+                "query": "\"multimodal\" \"instruction tuning\" \"chain of thought\" paper arxiv 2024 OR 2025",
+                "max_results": 6
+              },
+              "result": [
+                {
+                  "title": "What is Multimodal AI? | IBM",
+                  "abstract": "Jul 15, 2024 \u00b7 Multimodal AI refers to machine learning models capable of processing and integrating information from multiple \u2026",
+                  "url": "https://www.ibm.com/think/topics/multimodal-ai",
+                  "source": "web"
+                },
+                {
+                  "title": "Multimodal learning - Wikipedia",
+                  "abstract": "Multimodal learning is a type of deep learning that integrates and processes multiple types of data, referred to as modalities, such as \u2026",
+                  "url": "https://en.wikipedia.org/wiki/Multimodal_learning",
+                  "source": "web"
+                },
+                {
+                  "title": "MULTIMODAL | English meaning - Cambridge Dictionary",
+                  "abstract": "A multimodal agent may do this in multiple ways: through speech and intonation, facial expression and gaze, gesture, body \u2026",
+                  "url": "https://dictionary.cambridge.org/dictionary/english/multimodal",
+                  "source": "web"
+                },
+                {
+                  "title": "MULTIMODAL Definition & Meaning - Merriam-Webster",
+                  "abstract": "Sep 25, 2026 \u00b7 The meaning of MULTIMODAL is having or involving several modes, modalities, or maxima. How to use multimodal \u2026",
+                  "url": "https://www.merriam-webster.com/dictionary/multimodal",
+                  "source": "web"
+                },
+                {
+                  "title": "Multimodal Machine Learning - GeeksforGeeks",
+                  "abstract": "Jul 23, 2025 \u00b7 Multimodal Machine Learning refers to the use of multiple data types such as text, images, audio and video or \u2026",
+                  "url": "https://www.geeksforgeeks.org/machine-learning/multimodal-machine-learning/",
+                  "source": "web"
+                },
+                {
+                  "title": "National Multimodal LLM Programme | IMDA",
+                  "abstract": "Discover how Singapore\u2019s AI initiatives, driven by the National Multimodal LLM Programme, are shaping a more inclusive and \u2026",
+                  "url": "https://www.imda.gov.sg/about-imda/emerging-technologies-and-research/national-multimodal-llm-programme",
+                  "source": "web"
+                }
+              ]
+            },
+            {
+              "tool": "search_github",
+              "args": {
+                "query": "multimodal instruction tuning chain of thought",
+                "max_results": 6
+              },
+              "result": [
+                {
+                  "title": "Okoth67/wekeza_v6_lora_multimodal_cot_finetuning",
+                  "abstract": "Fine-tuning the Wekeza LLM using LoRA on multimodal Chain-of-Thought (CoT) instructions for Kenyan finance tasks.",
+                  "url": "https://github.com/Okoth67/wekeza_v6_lora_multimodal_cot_finetuning",
+                  "source": "github",
+                  "stars": 0,
+                  "language": "Jupyter Notebook"
+                }
+              ]
+            },
+            {
+              "action": "answer",
+              "text": ""
+            }
+          ]
+        },
+        {
+          "agent": "collector",
+          "sub_task": "vision language action models and video multimodal AI developments",
+          "papers_found": 5,
+          "calls_used": 4,
+          "trace": [
+            {
+              "tool": "search_arxiv",
+              "args": {
+                "query": "\"vision language action\" robotics",
+                "max_results": 5
+              },
+              "error": "search_arxiv failed: Page request resulted in HTTP 429 (https://export.arxiv.org/api/query?search_query=%28%22vision+language+action%22+robotics%29+AND+%28cat%3Acs.AI+OR+cat%3Acs.CL+OR+cat%3Acs.LG+OR+cat%3Acs.IR%29&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=100)"
+            },
+            {
+              "tool": "search_semantic_scholar",
+              "args": {
+                "query": "vision language action model robotics",
+                "year": "2024-",
+                "max_results": 5
+              },
+              "result": [
+                {
+                  "error": "Semantic Scholar API failed: 429 Client Error:  for url: https://api.semanticscholar.org/graph/v1/paper/search?query=vision+language+action+model+robotics&limit=5&fields=title%2Cabstract%2Curl%2Cyear%2CcitationCount%2Cauthors&year=2024-"
+                }
+              ]
+            },
+            {
+              "tool": "search_arxiv",
+              "args": {
+                "max_results": 5,
+                "query": "video multimodal foundation model reasoning"
+              },
+              "error": "search_arxiv failed: Page request resulted in HTTP 429 (https://export.arxiv.org/api/query?search_query=%28video+multimodal+foundation+model+reasoning%29+AND+%28cat%3Acs.AI+OR+cat%3Acs.CL+OR+cat%3Acs.LG+OR+cat%3Acs.IR%29&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=100)"
+            },
+            {
+              "tool": "search_github",
+              "args": {
+                "query": "vision-language-action model",
+                "max_results": 5
+              },
+              "result": [
+                {
+                  "title": "starVLA/starVLA",
+                  "abstract": "StarVLA: A Lego-like Codebase for Vision-Language-Action Model Developing",
+                  "url": "https://github.com/starVLA/starVLA",
+                  "source": "github",
+                  "stars": 3881,
+                  "language": "Python"
+                },
+                {
+                  "title": "jonyzhang2023/awesome-embodied-vla-va-vln",
+                  "abstract": "A curated list of state-of-the-art research in embodied AI, focusing on vision-language-action (VLA) models, vision-language navigation (VLN), and related multimodal learning approaches. ",
+                  "url": "https://github.com/jonyzhang2023/awesome-embodied-vla-va-vln",
+                  "source": "github",
+                  "stars": 3614,
+                  "language": null
+                },
+                {
+                  "title": "open-gigaai/giga-brain-0",
+                  "abstract": "GigaBrain-0: A World Model-Powered Vision-Language-Action Model",
+                  "url": "https://github.com/open-gigaai/giga-brain-0",
+                  "source": "github",
+                  "stars": 2666,
+                  "language": "Python"
+                },
+                {
+                  "title": "OpenHelix-Team/VLA-Adapter",
+                  "abstract": "VLA-Adapter: An Effective Paradigm for Tiny-Scale Vision-Language-Action Model",
+                  "url": "https://github.com/OpenHelix-Team/VLA-Adapter",
+                  "source": "github",
+                  "stars": 2337,
+                  "language": "Python"
+                },
+                {
+                  "title": "dexmal/opendm",
+                  "abstract": "An Open-World Foundation Model for General-Purpose Embodied Intelligence.",
+                  "url": "https://github.com/dexmal/opendm",
+                  "source": "github",
+                  "stars": 2248,
+                  "language": "Python"
+                }
+              ]
+            },
+            {
+              "action": "answer",
+              "text": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "agent": "critic",
+      "round": 1,
+      "verdict": "approve",
+      "gaps": [],
+      "papers_kept": 16,
+      "reasoning": "Critic response parsing failed, approving as-is",
+      "latency_s": 9.86
+    },
+    {
+      "agent": "writer",
+      "report_length": 4388,
+      "latency_s": 21.4
+    },
+    {
+      "agent": "grounding",
+      "latency_s": 10.6,
+      "grounded": true,
+      "reason": "ok",
+      "supported_fraction": 0.893,
+      "sentences_checked": 28,
+      "min_score": 0.213
+    }
+  ],
+  "latency_s": 156.9
+}

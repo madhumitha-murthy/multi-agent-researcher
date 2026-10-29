@@ -1,0 +1,317 @@
+{
+  "question": "What is retrieval augmented generation RAG and how does it improve LLM accuracy?",
+  "report": "## Overview\nRetrieval-Augmented Generation (RAG) is an architectural framework that integrates external knowledge retrieval into large language model generation processes [Awesome-LLM-Rag]. Based on the provided survey and resource listings, RAG improves LLM accuracy primarily by grounding model responses in retrieved content to eliminate hallucinations and factual errors [awesome-rag-hallucination], [awesome-hallucination-atlas].\n\n## Key Findings\n- RAG encompasses core foundational architectures, algorithmic enhancements, and domain-specific applications designed for AI-generated content [RAG-Survey].\n- Eliminating hallucinations is a central mechanism by which RAG pipelines aim to increase the reliability and accuracy of LLM outputs [awesome-rag-hallucination], [awesome-hallucination-atlas].\n- Knowledge retrieval strategies have evolved to include structured approaches, such as graph-based RAG (GraphRAG), to improve context retrieval [Awesome-GraphRAG].\n- Current RAG research spans specialized frameworks, evaluation benchmarks, and multimodal extensions across text and vision-language models [AwesomeRAGPapers], [awesome-hallucination-atlas].\n\n## Approaches Compared\nThe provided literature outlines foundational text-based RAG workflows alongside enhanced variants such as GraphRAG, which integrates graph-based data structures for knowledge representation and retrieval [Awesome-GraphRAG], [RAG-Survey]. Furthermore, pipelines vary between standard generative augmentation and specialized hallucination-elimination workflows designed to audit or filter outputs [awesome-rag-hallucination], [awesome-hallucination-atlas]. However, because the available sources are index repositories rather than experimental studies, empirical performance metrics comparing these specific approaches are absent.\n\n## Gaps & Open Questions\nThe provided sources consist strictly of curated lists and survey overviews, providing high-level taxonomies rather than technical details or quantitative experimental results. It remains uncertain which specific retrieval models or pipeline architectures yield the highest accuracy gains across different domains. Deeper analysis of primary experimental studies is required to determine the exact trade-offs, error rates, and hallucination reduction metrics between standard RAG and graph-augmented alternatives.\n\n## References\n1. Awesome-GraphRAG \u2013 https://github.com/DEEP-PolyU/Awesome-GraphRAG\n2. RAG-Survey \u2013 https://github.com/hymie122/RAG-Survey\n3. AwesomeRAGPapers \u2013 https://github.com/HuggingAGI/AwesomeRAGPapers\n4. Awesome-LLM-Rag \u2013 https://github.com/yangchou19/Awesome-LLM-Rag\n5. awesome-hallucination-atlas \u2013 https://github.com/GuangtaoLyu/awesome-hallucination-atlas\n6. awesome-rag-hallucination \u2013 https://github.com/wauldo/awesome-rag-hallucination\n7. awesome-rag-hallucination \u2013 https://github.com/wauldoai/awesome-rag-hallucination",
+  "papers": [
+    {
+      "title": "DEEP-PolyU/Awesome-GraphRAG",
+      "abstract": "Awesome-GraphRAG: A curated list of resources (surveys, papers, benchmarks, and opensource projects) on graph-based retrieval-augmented generation. ",
+      "url": "https://github.com/DEEP-PolyU/Awesome-GraphRAG",
+      "source": "github",
+      "stars": 2681,
+      "language": null
+    },
+    {
+      "title": "hymie122/RAG-Survey",
+      "abstract": "Collecting awesome papers of RAG for AIGC.  We propose a taxonomy of RAG foundations, enhancements, and applications in paper \"Retrieval-Augmented Generation for AI-Generated Content: A Survey\".",
+      "url": "https://github.com/hymie122/RAG-Survey",
+      "source": "github",
+      "stars": 1787,
+      "language": null
+    },
+    {
+      "title": "HuggingAGI/AwesomeRAGPapers",
+      "abstract": "A curated collection of influential surveys and papers on Retrieval-Augmented Generation (RAG), covering frameworks, evaluations, multi-modal extensions, and domain-specific applications.  ",
+      "url": "https://github.com/HuggingAGI/AwesomeRAGPapers",
+      "source": "github",
+      "stars": 56,
+      "language": null
+    },
+    {
+      "title": "yangchou19/Awesome-LLM-Rag",
+      "abstract": "A curated list of awesome papers and resources for Retrieval-Augmented Generation (RAG) in Large Language Models(LLM).",
+      "url": "https://github.com/yangchou19/Awesome-LLM-Rag",
+      "source": "github",
+      "stars": 12,
+      "language": null
+    },
+    {
+      "title": "GuangtaoLyu/awesome-hallucination-atlas",
+      "abstract": "A curated atlas of hallucination research across LLM/VLM/MLLM \u2014 papers, benchmarks & surveys on embodied AI, agents, RAG, reasoning, and training-free methods.",
+      "url": "https://github.com/GuangtaoLyu/awesome-hallucination-atlas",
+      "source": "github",
+      "stars": 4,
+      "language": "Python"
+    },
+    {
+      "title": "wauldo/awesome-rag-hallucination",
+      "abstract": "A curated list of tools, papers, and techniques for eliminating hallucinations in RAG pipelines",
+      "url": "https://github.com/wauldo/awesome-rag-hallucination",
+      "source": "github",
+      "stars": 1,
+      "language": null
+    },
+    {
+      "title": "wauldoai/awesome-rag-hallucination",
+      "abstract": "A curated list of tools, papers, and techniques for eliminating hallucinations in RAG pipelines",
+      "url": "https://github.com/wauldoai/awesome-rag-hallucination",
+      "source": "github",
+      "stars": 0,
+      "language": null
+    }
+  ],
+  "critic_rounds": 1,
+  "grounding": {
+    "grounded": true,
+    "reason": "ok",
+    "supported_fraction": 0.842,
+    "sentences_checked": 19,
+    "min_score": 0.308
+  },
+  "trace": [
+    {
+      "agent": "planner",
+      "sub_tasks": [
+        "retrieval augmented generation RAG architecture and how it works",
+        "how RAG improves LLM factual accuracy and reduces hallucinations",
+        "retrieval augmented generation vs fine-tuning accuracy comparison benchmarks"
+      ],
+      "latency_s": 3.81
+    },
+    {
+      "agent": "collectors_batch",
+      "n_collectors": 3,
+      "total_papers": 7,
+      "latency_s": 108.38,
+      "details": [
+        {
+          "agent": "collector",
+          "sub_task": "retrieval augmented generation vs fine-tuning accuracy comparison benchmarks",
+          "papers_found": 0,
+          "calls_used": 4,
+          "trace": [
+            {
+              "tool": "search_arxiv",
+              "args": {
+                "query": "retrieval augmented generation vs fine-tuning accuracy comparison benchmark",
+                "max_results": 6
+              },
+              "error": "search_arxiv failed: Page request resulted in HTTP 429 (https://export.arxiv.org/api/query?search_query=%28retrieval+augmented+generation+vs+fine-tuning+accuracy+comparison+benchmark%29+AND+%28cat%3Acs.AI+OR+cat%3Acs.CL+OR+cat%3Acs.LG+OR+cat%3Acs.IR%29&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=100)"
+            },
+            {
+              "tool": "search_semantic_scholar",
+              "args": {
+                "year": "2023-",
+                "query": "RAG vs fine-tuning accuracy benchmark comparison",
+                "max_results": 6
+              },
+              "result": [
+                {
+                  "error": "Semantic Scholar API failed: 429 Client Error:  for url: https://api.semanticscholar.org/graph/v1/paper/search?query=RAG+vs+fine-tuning+accuracy+benchmark+comparison&limit=6&fields=title%2Cabstract%2Curl%2Cyear%2CcitationCount%2Cauthors&year=2023-"
+                }
+              ]
+            },
+            {
+              "tool": "search_web",
+              "args": {
+                "max_results": 8,
+                "query": "\"retrieval augmented generation\" vs fine-tuning accuracy benchmark paper arxiv"
+              },
+              "result": []
+            },
+            {
+              "tool": "search_web",
+              "args": {
+                "query": "\"RAG vs fine-tuning\" comparison benchmark empirical study arxiv",
+                "max_results": 8
+              },
+              "result": []
+            },
+            {
+              "action": "answer",
+              "text": ""
+            }
+          ]
+        },
+        {
+          "agent": "collector",
+          "sub_task": "retrieval augmented generation RAG architecture and how it works",
+          "papers_found": 4,
+          "calls_used": 4,
+          "trace": [
+            {
+              "tool": "search_semantic_scholar",
+              "args": {
+                "max_results": 5,
+                "query": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks"
+              },
+              "result": [
+                {
+                  "error": "Semantic Scholar API failed: 429 Client Error:  for url: https://api.semanticscholar.org/graph/v1/paper/search?query=Retrieval-Augmented+Generation+for+Knowledge-Intensive+NLP+Tasks&limit=5&fields=title%2Cabstract%2Curl%2Cyear%2CcitationCount%2Cauthors"
+                }
+              ]
+            },
+            {
+              "tool": "search_arxiv",
+              "args": {
+                "max_results": 5,
+                "query": "Retrieval-Augmented Generation for Large Language Models Survey"
+              },
+              "error": "search_arxiv failed: Page request resulted in HTTP 429 (https://export.arxiv.org/api/query?search_query=%28Retrieval-Augmented+Generation+for+Large+Language+Models+Survey%29+AND+%28cat%3Acs.AI+OR+cat%3Acs.CL+OR+cat%3Acs.LG+OR+cat%3Acs.IR%29&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=100)"
+            },
+            {
+              "tool": "search_web",
+              "args": {
+                "max_results": 6,
+                "query": "research papers retrieval augmented generation RAG architecture survey Lewis Gao"
+              },
+              "result": []
+            },
+            {
+              "tool": "search_github",
+              "args": {
+                "max_results": 5,
+                "query": "RAG survey retrieval augmented generation papers"
+              },
+              "result": [
+                {
+                  "title": "DEEP-PolyU/Awesome-GraphRAG",
+                  "abstract": "Awesome-GraphRAG: A curated list of resources (surveys, papers, benchmarks, and opensource projects) on graph-based retrieval-augmented generation. ",
+                  "url": "https://github.com/DEEP-PolyU/Awesome-GraphRAG",
+                  "source": "github",
+                  "stars": 2681,
+                  "language": null
+                },
+                {
+                  "title": "hymie122/RAG-Survey",
+                  "abstract": "Collecting awesome papers of RAG for AIGC.  We propose a taxonomy of RAG foundations, enhancements, and applications in paper \"Retrieval-Augmented Generation for AI-Generated Content: A Survey\".",
+                  "url": "https://github.com/hymie122/RAG-Survey",
+                  "source": "github",
+                  "stars": 1787,
+                  "language": null
+                },
+                {
+                  "title": "HuggingAGI/AwesomeRAGPapers",
+                  "abstract": "A curated collection of influential surveys and papers on Retrieval-Augmented Generation (RAG), covering frameworks, evaluations, multi-modal extensions, and domain-specific applications.  ",
+                  "url": "https://github.com/HuggingAGI/AwesomeRAGPapers",
+                  "source": "github",
+                  "stars": 56,
+                  "language": null
+                },
+                {
+                  "title": "yangchou19/Awesome-LLM-Rag",
+                  "abstract": "A curated list of awesome papers and resources for Retrieval-Augmented Generation (RAG) in Large Language Models(LLM).",
+                  "url": "https://github.com/yangchou19/Awesome-LLM-Rag",
+                  "source": "github",
+                  "stars": 12,
+                  "language": null
+                }
+              ]
+            },
+            {
+              "action": "answer",
+              "text": ""
+            }
+          ]
+        },
+        {
+          "agent": "collector",
+          "sub_task": "how RAG improves LLM factual accuracy and reduces hallucinations",
+          "papers_found": 3,
+          "calls_used": 4,
+          "trace": [
+            {
+              "tool": "search_semantic_scholar",
+              "args": {
+                "year": "2023-",
+                "max_results": 5,
+                "query": "Retrieval-Augmented Generation factual accuracy reduce hallucination LLM"
+              },
+              "result": [
+                {
+                  "error": "Semantic Scholar API failed: 429 Client Error:  for url: https://api.semanticscholar.org/graph/v1/paper/search?query=Retrieval-Augmented+Generation+factual+accuracy+reduce+hallucination+LLM&limit=5&fields=title%2Cabstract%2Curl%2Cyear%2CcitationCount%2Cauthors&year=2023-"
+                }
+              ]
+            },
+            {
+              "tool": "search_arxiv",
+              "args": {
+                "max_results": 5,
+                "query": "RAG factual accuracy hallucination Large Language Models"
+              },
+              "error": "search_arxiv failed: Page request resulted in HTTP 429 (https://export.arxiv.org/api/query?search_query=%28RAG+factual+accuracy+hallucination+Large+Language+Models%29+AND+%28cat%3Acs.AI+OR+cat%3Acs.CL+OR+cat%3Acs.LG+OR+cat%3Acs.IR%29&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=100)"
+            },
+            {
+              "tool": "search_web",
+              "args": {
+                "query": "research papers \"Retrieval-Augmented Generation\" reduces hallucination factual accuracy site:arxiv.org",
+                "max_results": 6
+              },
+              "result": []
+            },
+            {
+              "tool": "search_github",
+              "args": {
+                "max_results": 5,
+                "query": "awesome RAG hallucination papers"
+              },
+              "result": [
+                {
+                  "title": "GuangtaoLyu/awesome-hallucination-atlas",
+                  "abstract": "A curated atlas of hallucination research across LLM/VLM/MLLM \u2014 papers, benchmarks & surveys on embodied AI, agents, RAG, reasoning, and training-free methods.",
+                  "url": "https://github.com/GuangtaoLyu/awesome-hallucination-atlas",
+                  "source": "github",
+                  "stars": 4,
+                  "language": "Python"
+                },
+                {
+                  "title": "wauldo/awesome-rag-hallucination",
+                  "abstract": "A curated list of tools, papers, and techniques for eliminating hallucinations in RAG pipelines",
+                  "url": "https://github.com/wauldo/awesome-rag-hallucination",
+                  "source": "github",
+                  "stars": 1,
+                  "language": null
+                },
+                {
+                  "title": "wauldoai/awesome-rag-hallucination",
+                  "abstract": "A curated list of tools, papers, and techniques for eliminating hallucinations in RAG pipelines",
+                  "url": "https://github.com/wauldoai/awesome-rag-hallucination",
+                  "source": "github",
+                  "stars": 0,
+                  "language": null
+                }
+              ]
+            },
+            {
+              "action": "answer",
+              "text": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "agent": "critic",
+      "round": 1,
+      "verdict": "approve",
+      "gaps": [],
+      "papers_kept": 7,
+      "reasoning": "Critic response parsing failed, approving as-is",
+      "latency_s": 10.03
+    },
+    {
+      "agent": "writer",
+      "report_length": 2890,
+      "latency_s": 15.05
+    },
+    {
+      "agent": "grounding",
+      "latency_s": 10.85,
+      "grounded": true,
+      "reason": "ok",
+      "supported_fraction": 0.842,
+      "sentences_checked": 19,
+      "min_score": 0.308
+    }
+  ],
+  "latency_s": 148.14
+}

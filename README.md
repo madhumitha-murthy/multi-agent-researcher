@@ -158,3 +158,13 @@ Runs 10 research questions and reports:
 - Latency per question
 
 Results saved to `results/eval_metrics.json`.
+
+## Example Reports
+
+Example reports and traces committed in `results/` — run with Gemini 3.7 Flash:
+
+| Query | Papers | Grounding | Time |
+|-------|--------|-----------|------|
+| Reducing hallucinations in LLMs | 23 | 93.1% | 153s |
+| Retrieval augmented generation (RAG) | 7 | 84.2% | 148s |
+| Multi-modal AI (vision + language) | 16 | 89.3% | 157s |

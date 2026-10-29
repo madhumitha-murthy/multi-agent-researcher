@@ -3,7 +3,7 @@ __pycache__/
 venv/
 .venv/
 .env
-results/
+results/eval_*.json
 .pytest_cache/
 .DS_Store
 *.egg-info/
