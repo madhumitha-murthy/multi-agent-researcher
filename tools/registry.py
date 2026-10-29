@@ -1,10 +1,15 @@
 # tools/registry.py - Central tool registry
 
-from tools.arxiv_search import TOOL_SCHEMA as ARXIV_SCHEMA, search_arxiv
-from tools.github_search import TOOL_SCHEMA as GITHUB_SCHEMA, search_github
-from tools.s2_search import TOOL_SCHEMA as S2_SCHEMA, search_semantic_scholar
-from tools.url_reader import TOOL_SCHEMA as URL_SCHEMA, read_url
-from tools.web_search import TOOL_SCHEMA as WEB_SCHEMA, search_web
+from tools.arxiv_search import TOOL_SCHEMA as ARXIV_SCHEMA
+from tools.arxiv_search import search_arxiv
+from tools.github_search import TOOL_SCHEMA as GITHUB_SCHEMA
+from tools.github_search import search_github
+from tools.s2_search import TOOL_SCHEMA as S2_SCHEMA
+from tools.s2_search import search_semantic_scholar
+from tools.url_reader import TOOL_SCHEMA as URL_SCHEMA
+from tools.url_reader import read_url
+from tools.web_search import TOOL_SCHEMA as WEB_SCHEMA
+from tools.web_search import search_web
 
 COLLECTOR_TOOLS = [ARXIV_SCHEMA, S2_SCHEMA, WEB_SCHEMA, GITHUB_SCHEMA, URL_SCHEMA]
 

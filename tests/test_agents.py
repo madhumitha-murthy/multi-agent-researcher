@@ -5,15 +5,14 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from llm import FakeModel, ModelResponse, strip_json_fences
-from agents.planner import run_planner
-from agents.critic import run_critic
-from agents.writer import run_writer
 from agents.collector import run_collector
+from agents.critic import run_critic
 from agents.grounding import check_report_grounding, split_sentences
-from tools.registry import execute_tool
+from agents.planner import run_planner
+from agents.writer import run_writer
 from eval.run_eval import compute_metrics
-
+from llm import FakeModel, ModelResponse, strip_json_fences
+from tools.registry import execute_tool
 
 # --- Fake similarity for graph tests ---
 

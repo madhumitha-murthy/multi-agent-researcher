@@ -1,10 +1,9 @@
 # agents/collector.py - Searches for papers using tools (ArXiv, Semantic Scholar)
 # This is the core agentic part - the LLM decides which tools to call
 
-import json
 
-from config import MAX_COLLECTOR_CALLS
 import tools.registry as registry
+from config import MAX_COLLECTOR_CALLS
 
 SYSTEM_PROMPT = """You are a research collector. Your job is to find relevant information on a given topic.
 
