@@ -1,0 +1,626 @@
+{
+  "question": "What is retrieval augmented generation RAG and how does it improve LLM accuracy?",
+  "report": "## Overview\nRetrieval-Augmented Generation (RAG) is a framework that couples Large Language Models (LLMs) with external information retrieval systems, fetching relevant documents or structured data at inference time to condition the generation process. It improves LLM accuracy by grounding model outputs in up-to-date, verifiable factual context, directly mitigating hallucinations and the limitations of static parametric memory.\n\n## Key Findings\n- **Hallucination Mitigation and Up-to-Date Knowledge**: RAG resolves core LLM deficiencies\u2014such as factual inaccuracy, outdated training corpora, and untraceable reasoning\u2014by sourcing ground truth from external databases at runtime [Retrieval-Augmented Generation for Large Language Models: A Survey], [RETA-LLM: A Retrieval-Augmented Large Language Model Toolkit].\n- **Graph RAG for Complex Reasoning**: Augmenting LLMs with Knowledge Graphs (Graph RAG) overcomes the shortcomings of flat, chunk-based vector retrieval by enabling structured, multi-hop reasoning over complex entity relationships [Can Large Language Models Perform Retrieval-Augmented Generation as Multi-Hop Reasoning Over Knowledge Graphs?], [Graph Retrieval-Augmented Generation for Large Language Models: A Survey].\n- **Complementarity with Fine-Tuning**: While domain fine-tuning adapts internal parameters, pairing fine-tuning with RAG provides superior accuracy and operational compliance for specialized domains like cybersecurity and medicine [Fine-tuning with RAG for Improving LLM Learning of New Skills], [Fine-tuning vs RAG: A Position Paper from the Perspective of LLM-based Cybersecurity Modeling].\n- **Dynamic and Adaptive Retrieval**: Adaptive frameworks balance the use of internal parametric knowledge and external context, avoiding unnecessary retrievals and filtering irrelevant noise [Rowen: Adaptive Retrieval-Augmented Generation for Hallucination...], [Dynamic RAG with hybrid retrieval: A novel approach to robust LLMs...].\n\n## Approaches Compared\nStandard text-chunk retrieval via vector stores is widely contrasted with Graph RAG and hybrid retrieval systems; graph-based structures significantly improve semantic alignment and multi-hop question answering compared to isolated text chunks [Domain-Specific Retrieval-Augmented Generation Using Vector Stores, Knowledge Graphs, and Tensor Factorization], [A Survey of Graph Retrieval-Augmented Generation for Customized Large Language Models]. Furthermore, studies evaluating RAG against parameter fine-tuning show that RAG provides flexible, zero-retraining knowledge updates, while fine-tuning alters task behavior; combining both yields the highest accuracy on structured tasks [Domain Fine-Tuning vs. Retrieval-Augmented Generation for Medical Multiple-Choice Question Answering: A Controlled Comparison at the 4B-Parameter Scale], [Fine-tuning with RAG for Improving LLM Learning of New Skills].\n\n## Gaps & Open Questions\nDespite notable accuracy gains, retrieval does not completely eliminate hallucinations, as LLMs can still misinterpret retrieved evidence or produce untruthful answers when evidence is noisy or conflicting [Why Retrieval Doesn't Cure Everything: A Review of Hallucination in...]. In addition, RAG introduces emerging vulnerabilities regarding data privacy, adversarial injection, and attribution explainability [Towards Trustworthy Retrieval Augmented Generation for Large Language Models: A Survey]. Efficient context compression and optimizing joint fine-tuning strategies between the retriever and the generator remain active challenges [Contextual Compression in Retrieval-Augmented Generation for Large Language Models: A Survey], [A Comparison of Independent and Joint Fine-tuning Strategies for Retrieval-Augmented Generation].\n\n## References\n1. Retrieval-Augmented Generation for Large Language Models: A Survey - https://www.semanticscholar.org/paper/46f9f7b8f88f72e12cbdb21e3311f995eb6e65c5\n2. Towards Trustworthy Retrieval Augmented Generation for Large Language Models: A Survey - https://www.semanticscholar.org/paper/0c42f77546551ae8b103057771a3b1b25cdd35bd\n3. Graph Retrieval-Augmented Generation for Large Language Models: A Survey - https://www.semanticscholar.org/paper/125a9c020316341bde65ea374f19caf346cfecfa\n4. A Survey of Graph Retrieval-Augmented Generation for Customized Large Language Models - https://www.semanticscholar.org/paper/908d45b0d2b88ba72ee501c368eb618d29d61ce0\n5. Contextual Compression in Retrieval-Augmented Generation for Large Language Models: A Survey - https://www.semanticscholar.org/paper/641a39330b533dde61e0c66487c53a811ae43755\n6. Rowen: Adaptive Retrieval-Augmented Generation for Hallucination... - https://dl.acm.org/doi/10.1145/3767695.3769500\n7. Dynamic RAG with hybrid retrieval: A novel approach to robust LLMs \u2026 - https://www.sciencedirect.com/science/article/pii/S092523122602309X\n8. Why Retrieval Doesn't Cure Everything: A Review of Hallucination in... - https://ijisrt.com/assets/upload/files/IJISRT26SEP724.pdf\n9. Fine-tuning vs RAG: A Position Paper from the Perspective of LLM-based Cybersecurity Modeling - https://www.semanticscholar.org/paper/9c2aca834c1c9846844b82c358ab263cd7b5cbf7\n10. Fine-tuning with RAG for Improving LLM Learning of New Skills - https://www.semanticscholar.org/paper/47464b50cf60bb6def3dc4dfe507377cb86af949\n11. Domain Fine-Tuning vs. Retrieval-Augmented Generation for Medical Multiple-Choice Question Answering: A Controlled Comparison at the 4B-Parameter Scale - https://www.semanticscholar.org/paper/8e3cc7911f4f3156cac69f66de5e7da0f89d2ea6\n12. Domain-Specific Retrieval-Augmented Generation Using Vector Stores, Knowledge Graphs, and Tensor Factorization - https://www.semanticscholar.org/paper/b565394952065c37345fb75fb66e84709b6402a3\n13. Can Large Language Models Perform Retrieval-Augmented Generation as Multi-Hop Reasoning Over Knowledge Graphs? - https://www.semanticscholar.org/paper/9feadf3ce9890a69a1dfe3225b616013335f9608\n14. RETA-LLM: A Retrieval-Augmented Large Language Model Toolkit - http://arxiv.org/abs/2306.05212v1\n15. A Comparison of Independent and Joint Fine-tuning Strategies for Retrieval-Augmented Generation - http://arxiv.org/abs/2510.01600v2",
+  "papers": [
+    {
+      "title": "Retrieval-Augmented Generation for Large Language Models: A Survey",
+      "abstract": "Large Language Models (LLMs) showcase impressive capabilities but encounter challenges like hallucination, outdated knowledge, and non-transparent, untraceable reasoning processes. Retrieval-Augmented Generation (RAG) has emerged as a promising solution by incorporating knowledge from external databases. This enhances the accuracy and credibility of the generation, particularly for knowledge-intensive tasks, and allows for continuous knowledge updates and integration of domain-specific informati",
+      "url": "https://www.semanticscholar.org/paper/46f9f7b8f88f72e12cbdb21e3311f995eb6e65c5",
+      "year": 2023,
+      "citations": 4382,
+      "source": "semantic_scholar",
+      "authors": "Yun-Fan Gao, Yun Xiong, Xin-Yu Gao"
+    },
+    {
+      "title": "Towards Trustworthy Retrieval Augmented Generation for Large Language Models: A Survey",
+      "abstract": "Retrieval-Augmented Generation (RAG) enhances AI-generated content by integrating external knowledge, improving relevance, and reducing hallucinations. However, RAG also introduces risks related to reliability, safety, privacy, fairness, explainability, and accountability, which impact trustworthiness. While various methods aim to address these concerns, a unified framework is lacking. This survey bridges that gap by presenting a comprehensive roadmap for trustworthy RAG systems. We provide a st",
+      "url": "https://www.semanticscholar.org/paper/0c42f77546551ae8b103057771a3b1b25cdd35bd",
+      "year": 2025,
+      "citations": 70,
+      "source": "semantic_scholar",
+      "authors": "B. Ni, Zhe-Yuan Liu, Yong-Jia Lei"
+    },
+    {
+      "title": "Graph Retrieval-Augmented Generation for Large Language Models: A Survey",
+      "abstract": "Large Language Models (LLMs) demonstrate general knowledge, but they suffer when specifically needed knowledge is not present in their training set. Two approaches to ameliorating this, without retraining, are 1) prompt engineering and 2) Retrieval-Augmented Generation (RAG). RAG is a form of prompt engineering, insofar as relevant lexical snippets retrieved from RAG corpora are vectorized and aggregated with prompts. However, RAG documents are often noisy, i.e., while relevant to a given prompt",
+      "url": "https://www.semanticscholar.org/paper/125a9c020316341bde65ea374f19caf346cfecfa",
+      "year": 2024,
+      "citations": 103,
+      "source": "semantic_scholar",
+      "authors": "T. Procko, Omar Ochoa"
+    },
+    {
+      "title": "A Survey of Graph Retrieval-Augmented Generation for Customized Large Language Models",
+      "abstract": "Large language models (LLMs) have demonstrated remarkable capabilities in a wide range of tasks, yet their application to specialized domains remains challenging due to the need for deep expertise. Retrieval-Augmented generation (RAG) has emerged as a promising solution to customize LLMs for professional fields by seamlessly integrating external knowledge bases, enabling real-time access to domain-specific expertise during inference. Despite its potential, traditional RAG systems, based on flat ",
+      "url": "https://www.semanticscholar.org/paper/908d45b0d2b88ba72ee501c368eb618d29d61ce0",
+      "year": 2025,
+      "citations": 168,
+      "source": "semantic_scholar",
+      "authors": "Qing-Gang Zhang, Shengyuan Chen, Yuan-Chen Bei"
+    },
+    {
+      "title": "Contextual Compression in Retrieval-Augmented Generation for Large Language Models: A Survey",
+      "abstract": "Large Language Models (LLMs) showcase remarkable abilities, yet they struggle with limitations such as hallucinations, outdated knowledge, opacity, and inexplicable reasoning. To address these challenges, Retrieval-Augmented Generation (RAG) has proven to be a viable solution, leveraging external databases to improve the consistency and coherence of generated content, especially valuable for complex, knowledge-rich tasks, and facilitates continuous improvement by leveraging domain-specific insig",
+      "url": "https://www.semanticscholar.org/paper/641a39330b533dde61e0c66487c53a811ae43755",
+      "year": 2024,
+      "citations": 13,
+      "source": "semantic_scholar",
+      "authors": "Sourav Verma"
+    },
+    {
+      "title": "[2403.10446] Enhancing LLM Factual Accuracy with RAG to Counter ...",
+      "abstract": "Mar 15, 2024 \u00b7 We proposed an end-to-end system design towards utilizing Retrieval Augmented Generation (RAG) to improve the \u2026Read more",
+      "url": "https://arxiv.org/abs/2403.10446",
+      "source": "web"
+    },
+    {
+      "title": "Retrieval-Augmented Generation: A Comprehensive Survey of \u2026",
+      "abstract": "Retrieval-Augmented Generation (RAG) has emerged as a powerful paradigm to enhance large language models (LLMs) by \u2026",
+      "url": "https://arxiv.org/html/2506.00054v1",
+      "source": "web"
+    },
+    {
+      "title": "Mitigating Large Language Model Hallucinations through Retrieval ...",
+      "abstract": "1.2 Retrieval-Augmented Generation as a Response m an external corpus at inference time and conditions generation on the \u2026",
+      "url": "https://www.abhishekbote.com/assets/Abhishek_Bote_RAG_Research.pdf",
+      "source": "web"
+    },
+    {
+      "title": "Rowen: Adaptive Retrieval-Augmented Generation for Hallucination ...",
+      "abstract": "Dec 6, 2025 \u00b7 To balance the use of parametric knowledge within LLMs and external information, in this study, we present Rowen, a \u2026",
+      "url": "https://dl.acm.org/doi/10.1145/3767695.3769500",
+      "source": "web"
+    },
+    {
+      "title": "A Hallucination Aware Retrieval Augmented Generation Framework \u2026",
+      "abstract": "This section presents the proposed hallucination-aware Retrieval-Augmented Generation (RAG) framework, designed to reduce \u2026",
+      "url": "https://ijirt.org/publishedpaper/IJIRT202312_PAPER.pdf",
+      "source": "web"
+    },
+    {
+      "title": "Dynamic RAG with hybrid retrieval: A novel approach to robust LLMs \u2026",
+      "abstract": "This section presents the proposed enhanced Retrieval-Augmented Generation (RAG) framework, a novel approach designed to \u2026",
+      "url": "https://www.sciencedirect.com/science/article/pii/S092523122602309X",
+      "source": "web"
+    },
+    {
+      "title": "Why Retrieval Doesn't Cure Everything: A Review of Hallucination in ...",
+      "abstract": "J. Chen, H. Lin, X. Han, and L. Sun, \u201cBenchmarking large language models in retrieval-augmented generation,\u201d in Proc. AAAI Conf. \u2026",
+      "url": "https://ijisrt.com/assets/upload/files/IJISRT26SEP724.pdf",
+      "source": "web"
+    },
+    {
+      "title": "Evidence-Aligned Entity Verication for Hallucination Detection in ...",
+      "abstract": "AG is employed to enhance hallucination detection by addressing information updating challenges. To address RHD, we propose a \u2026",
+      "url": "https://aclanthology.org/2026.findings-acl.1477.pdf",
+      "source": "web"
+    },
+    {
+      "title": "Fine-tuning vs RAG: A Position Paper from the Perspective of LLM-based Cybersecurity Modeling",
+      "abstract": "Large Language Models (LLMs) have revolutionized Natural Language Processing (NLP) tasks, enabling critical capabilities in fields such as business and finance with their cybersecurity analysis. In particular, LLMs are becoming vital in cybersecurity in providing more accurate solutions to different types of threats, vulnerabilities, and security challenges through pattern recognition, intelligent response generation, and automating threat detection. Although LLMs are pre-trained with a large am",
+      "url": "https://www.semanticscholar.org/paper/9c2aca834c1c9846844b82c358ab263cd7b5cbf7",
+      "year": 2026,
+      "citations": 1,
+      "source": "semantic_scholar",
+      "authors": "Mohammad Amaz Uddin, Iqbal H. Sarker"
+    },
+    {
+      "title": "Fine-tuning with RAG for Improving LLM Learning of New Skills",
+      "abstract": "Large language model (LLM) agents deployed for multi-step tasks frequently fail in predictable ways: attempting actions with unmet preconditions, issuing redundant commands, or mishandling environment constraints. While retrieval-augmented generation (RAG) can improve performance by providing runtime guidance, it requires maintaining external knowledge databases and adds computational overhead at every deployment. We propose a simple pipeline that converts inference-time retrieval into learned c",
+      "url": "https://www.semanticscholar.org/paper/47464b50cf60bb6def3dc4dfe507377cb86af949",
+      "year": 2025,
+      "citations": 6,
+      "source": "semantic_scholar",
+      "authors": "Humaid Ibrahim, Nikolai Rozanov, Marek Rei"
+    },
+    {
+      "title": "Domain Fine-Tuning vs. Retrieval-Augmented Generation for Medical Multiple-Choice Question Answering: A Controlled Comparison at the 4B-Parameter Scale",
+      "abstract": "Practitioners deploying small open-weight large language models (LLMs) for medical question answering face a recurring design choice: invest in a domain-fine-tuned model, or keep a general-purpose model and inject domain knowledge at inference time via retrieval-augmented generation (RAG). We isolate this trade-off by holding model size, prompt template, decoding temperature, retrieval pipeline, and evaluation protocol fixed, and varying only (i) whether the model has been domain-adapted (Gemma ",
+      "url": "https://www.semanticscholar.org/paper/8e3cc7911f4f3156cac69f66de5e7da0f89d2ea6",
+      "year": 2026,
+      "citations": 1,
+      "source": "semantic_scholar",
+      "authors": "A. Buskila"
+    },
+    {
+      "title": "Domain-Specific Retrieval-Augmented Generation Using Vector Stores, Knowledge Graphs, and Tensor Factorization",
+      "abstract": "Large Language Models (LLMs) are pre-trained on large-scale corpora and excel in numerous general natural language processing (NLP) tasks, such as question answering (QA). Despite their advanced language capabilities, when it comes to domain-specific and knowledge-intensive tasks, LLMs suffer from hallucinations, knowledge cut-offs, and lack of knowledge attributions. Additionally, fine tuning LLMs' intrinsic knowledge to highly specific domains is an expensive and time consuming process. The re",
+      "url": "https://www.semanticscholar.org/paper/b565394952065c37345fb75fb66e84709b6402a3",
+      "year": 2024,
+      "citations": 34,
+      "source": "semantic_scholar",
+      "authors": "Ryan C. Barron, Vesselin Grantcharov, Selma Wanna"
+    },
+    {
+      "title": "Can Large Language Models Perform Retrieval-Augmented Generation as Multi-Hop Reasoning Over Knowledge Graphs?",
+      "abstract": "Retrieval-Augmented Generation (RAG) enhances Large Language Models (LLMs) by grounding their outputs in external knowledge. However, conventional chunk-based retrieval methods are limited in handling complex multi-hop questions due to their lack of structural reasoning and semantic alignment. In this work, we propose a novel pipeline where an LLM performs multi-hop subgraph retrieval over a knowledge graph (KG), followed by hallucination detection using triplet-level graph alignment. The final ",
+      "url": "https://www.semanticscholar.org/paper/9feadf3ce9890a69a1dfe3225b616013335f9608",
+      "year": 2025,
+      "citations": 1,
+      "source": "semantic_scholar",
+      "authors": "M. A. Hamid, S. El-Regaily, Mostafa M. Aref"
+    },
+    {
+      "title": "RETA-LLM: A Retrieval-Augmented Large Language Model Toolkit",
+      "abstract": "Although Large Language Models (LLMs) have demonstrated extraordinary capabilities in many domains, they still have a tendency to hallucinate and generate fictitious responses to user requests. This problem can be alleviated by augmenting LLMs with information retrieval (IR) systems (also known as retrieval-augmented LLMs). Applying this strategy, LLMs can generate more factual texts in response to user input according to the relevant content retrieved by IR systems from external corpora as refe",
+      "url": "http://arxiv.org/abs/2306.05212v1",
+      "year": 2023,
+      "source": "arxiv",
+      "authors": "Jiongnan Liu, Jiajie Jin, Zihan Wang"
+    },
+    {
+      "title": "A Comparison of Independent and Joint Fine-tuning Strategies for Retrieval-Augmented Generation",
+      "abstract": "A Comparison of Independent and Joint Fine-tuning Strategies for Retrieval-Augmented Generation Download PDF Neal Gregory Lawton, Alfy Samuel, Anoop Kumar, Daben Liu Published: 20 Aug 2025, Retrieval augmented generation (RAG) is a popular framework for question answering that is powered by two large language models (LLMs): an embedding model that retrieves context documents from a database that are relevant to a given question, and a generator model that uses the retrieved context to generate a",
+      "url": "http://arxiv.org/abs/2510.01600v2",
+      "year": 2025,
+      "source": "arxiv",
+      "authors": "Neal Gregory Lawton, Alfy Samuel, Anoop Kumar"
+    }
+  ],
+  "critic_rounds": 1,
+  "grounding": {
+    "grounded": true,
+    "reason": "ok",
+    "supported_fraction": 0.897,
+    "sentences_checked": 29,
+    "min_score": 0.085
+  },
+  "trace": [
+    {
+      "agent": "planner",
+      "sub_tasks": [
+        "Retrieval Augmented Generation RAG architecture and how it works",
+        "How RAG reduces hallucinations and improves LLM factual accuracy",
+        "RAG vs fine-tuning for LLM performance and knowledge retrieval"
+      ],
+      "latency_s": 4.17
+    },
+    {
+      "agent": "collectors_batch",
+      "n_collectors": 3,
+      "total_papers": 32,
+      "latency_s": 436.71,
+      "details": [
+        {
+          "agent": "collector",
+          "sub_task": "Retrieval Augmented Generation RAG architecture and how it works",
+          "papers_found": 10,
+          "calls_used": 6,
+          "trace": [
+            {
+              "tool": "search_semantic_scholar",
+              "args": {
+                "query": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+                "max_results": 5
+              },
+              "error": "Semantic Scholar API: exhausted retries (429)"
+            },
+            {
+              "tool": "search_arxiv",
+              "args": {
+                "max_results": 5,
+                "query": "Retrieval-Augmented Generation survey architecture"
+              },
+              "error": "ArXiv search failed: Page request resulted in HTTP 429 (https://export.arxiv.org/api/query?search_query=%28Retrieval-Augmented+Generation+survey+architecture%29+AND+%28cat%3Acs.AI+OR+cat%3Acs.CL+OR+cat%3Acs.LG+OR+cat%3Acs.IR%29&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=10)"
+            },
+            {
+              "tool": "search_semantic_scholar",
+              "args": {
+                "query": "Retrieval-Augmented Generation for Large Language Models: A Survey",
+                "year": "2023-",
+                "max_results": 5
+              },
+              "result": [
+                {
+                  "title": "Retrieval-Augmented Generation for Large Language Models: A Survey",
+                  "abstract": "Large Language Models (LLMs) showcase impressive capabilities but encounter challenges like hallucination, outdated knowledge, and non-transparent, untraceable reasoning processes. Retrieval-Augmented Generation (RAG) has emerged as a promising solution by incorporating knowledge from external databases. This enhances the accuracy and credibility of the generation, particularly for knowledge-intensive tasks, and allows for continuous knowledge updates and integration of domain-specific informati",
+                  "url": "https://www.semanticscholar.org/paper/46f9f7b8f88f72e12cbdb21e3311f995eb6e65c5",
+                  "year": 2023,
+                  "citations": 4382,
+                  "source": "semantic_scholar",
+                  "authors": "Yun-Fan Gao, Yun Xiong, Xin-Yu Gao"
+                },
+                {
+                  "title": "Towards Trustworthy Retrieval Augmented Generation for Large Language Models: A Survey",
+                  "abstract": "Retrieval-Augmented Generation (RAG) enhances AI-generated content by integrating external knowledge, improving relevance, and reducing hallucinations. However, RAG also introduces risks related to reliability, safety, privacy, fairness, explainability, and accountability, which impact trustworthiness. While various methods aim to address these concerns, a unified framework is lacking. This survey bridges that gap by presenting a comprehensive roadmap for trustworthy RAG systems. We provide a st",
+                  "url": "https://www.semanticscholar.org/paper/0c42f77546551ae8b103057771a3b1b25cdd35bd",
+                  "year": 2025,
+                  "citations": 70,
+                  "source": "semantic_scholar",
+                  "authors": "B. Ni, Zhe-Yuan Liu, Yong-Jia Lei"
+                },
+                {
+                  "title": "Graph Retrieval-Augmented Generation for Large Language Models: A Survey",
+                  "abstract": "Large Language Models (LLMs) demonstrate general knowledge, but they suffer when specifically needed knowledge is not present in their training set. Two approaches to ameliorating this, without retraining, are 1) prompt engineering and 2) Retrieval-Augmented Generation (RAG). RAG is a form of prompt engineering, insofar as relevant lexical snippets retrieved from RAG corpora are vectorized and aggregated with prompts. However, RAG documents are often noisy, i.e., while relevant to a given prompt",
+                  "url": "https://www.semanticscholar.org/paper/125a9c020316341bde65ea374f19caf346cfecfa",
+                  "year": 2024,
+                  "citations": 103,
+                  "source": "semantic_scholar",
+                  "authors": "T. Procko, Omar Ochoa"
+                },
+                {
+                  "title": "A Survey of Graph Retrieval-Augmented Generation for Customized Large Language Models",
+                  "abstract": "Large language models (LLMs) have demonstrated remarkable capabilities in a wide range of tasks, yet their application to specialized domains remains challenging due to the need for deep expertise. Retrieval-Augmented generation (RAG) has emerged as a promising solution to customize LLMs for professional fields by seamlessly integrating external knowledge bases, enabling real-time access to domain-specific expertise during inference. Despite its potential, traditional RAG systems, based on flat ",
+                  "url": "https://www.semanticscholar.org/paper/908d45b0d2b88ba72ee501c368eb618d29d61ce0",
+                  "year": 2025,
+                  "citations": 168,
+                  "source": "semantic_scholar",
+                  "authors": "Qing-Gang Zhang, Shengyuan Chen, Yuan-Chen Bei"
+                },
+                {
+                  "title": "Contextual Compression in Retrieval-Augmented Generation for Large Language Models: A Survey",
+                  "abstract": "Large Language Models (LLMs) showcase remarkable abilities, yet they struggle with limitations such as hallucinations, outdated knowledge, opacity, and inexplicable reasoning. To address these challenges, Retrieval-Augmented Generation (RAG) has proven to be a viable solution, leveraging external databases to improve the consistency and coherence of generated content, especially valuable for complex, knowledge-rich tasks, and facilitates continuous improvement by leveraging domain-specific insig",
+                  "url": "https://www.semanticscholar.org/paper/641a39330b533dde61e0c66487c53a811ae43755",
+                  "year": 2024,
+                  "citations": 13,
+                  "source": "semantic_scholar",
+                  "authors": "Sourav Verma"
+                }
+              ]
+            },
+            {
+              "tool": "search_semantic_scholar",
+              "args": {
+                "max_results": 5,
+                "query": "\"Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks\" Lewis"
+              },
+              "error": "Semantic Scholar API: exhausted retries (429)"
+            },
+            {
+              "tool": "search_semantic_scholar",
+              "args": {
+                "query": "Self-RAG Learning to Retrieve Generate and Critique through Self-Reflection",
+                "max_results": 5
+              },
+              "error": "Semantic Scholar API: exhausted retries (429)"
+            },
+            {
+              "tool": "search_github",
+              "args": {
+                "query": "Retrieval-Augmented Generation papers awesome-rag",
+                "max_results": 5
+              },
+              "result": [
+                {
+                  "title": "HuggingAGI/AwesomeRAGPapers",
+                  "abstract": "A curated collection of influential surveys and papers on Retrieval-Augmented Generation (RAG), covering frameworks, evaluations, multi-modal extensions, and domain-specific applications.  ",
+                  "url": "https://github.com/HuggingAGI/AwesomeRAGPapers",
+                  "source": "github",
+                  "stars": 56,
+                  "language": null
+                },
+                {
+                  "title": "usama-shiranai90/Awesome-RAG-Medical",
+                  "abstract": "Welcome to the RAG Medical Repository, a curated collection of resources, datasets, review papers, research papers, tools, and tutorials focused on Retrieval-Augmented Generation (RAG) applications in the medical field.",
+                  "url": "https://github.com/usama-shiranai90/Awesome-RAG-Medical",
+                  "source": "github",
+                  "stars": 7,
+                  "language": "Python"
+                },
+                {
+                  "title": "Awesome-llms-labs/awesome-rag",
+                  "abstract": "Awesome list of retrieval-augmented generation (RAG) resources: frameworks, vector databases, embeddings, chunking, reranking, advanced patterns, evaluation, papers \u2014 with machine-readable data.",
+                  "url": "https://github.com/Awesome-llms-labs/awesome-rag",
+                  "source": "github",
+                  "stars": 6,
+                  "language": null
+                },
+                {
+                  "title": "nluninja/awesome-rag-study",
+                  "abstract": "A curated collection of papers, frameworks, tools, and resources on Retrieval-Augmented Generation (RAG).  Maintained for students of the Text Mining and Data Visualization course as a starting point for thesis research.",
+                  "url": "https://github.com/nluninja/awesome-rag-study",
+                  "source": "github",
+                  "stars": 5,
+                  "language": null
+                },
+                {
+                  "title": "tchernodawda/awesome-rag",
+                  "abstract": "A curated list of papers, tools, and resources on Retrieval-Augmented Generation (RAG).",
+                  "url": "https://github.com/tchernodawda/awesome-rag",
+                  "source": "github",
+                  "stars": 2,
+                  "language": null
+                }
+              ]
+            },
+            {
+              "action": "answer",
+              "text": ""
+            }
+          ]
+        },
+        {
+          "agent": "collector",
+          "sub_task": "How RAG reduces hallucinations and improves LLM factual accuracy",
+          "papers_found": 8,
+          "calls_used": 4,
+          "trace": [
+            {
+              "tool": "search_semantic_scholar",
+              "args": {
+                "query": "retrieval augmented generation reduces hallucination factual accuracy",
+                "year": "2023-",
+                "max_results": 6
+              },
+              "error": "Semantic Scholar API: exhausted retries (429)"
+            },
+            {
+              "tool": "search_arxiv",
+              "args": {
+                "query": "RAG hallucination factual accuracy retrieval augmented",
+                "max_results": 6
+              },
+              "error": "ArXiv search failed: Page request resulted in HTTP 429 (https://export.arxiv.org/api/query?search_query=%28RAG+hallucination+factual+accuracy+retrieval+augmented%29+AND+%28cat%3Acs.AI+OR+cat%3Acs.CL+OR+cat%3Acs.LG+OR+cat%3Acs.IR%29&id_list=&sortBy=relevance&sortOrder=descending&start=0&max_results=10)"
+            },
+            {
+              "tool": "search_web",
+              "args": {
+                "query": "\"Retrieval-Augmented Generation\" hallucination factual accuracy research paper arxiv",
+                "max_results": 8
+              },
+              "result": [
+                {
+                  "title": "[2403.10446] Enhancing LLM Factual Accuracy with RAG to Counter ...",
+                  "abstract": "Mar 15, 2024 \u00b7 We proposed an end-to-end system design towards utilizing Retrieval Augmented Generation (RAG) to improve the \u2026Read more",
+                  "url": "https://arxiv.org/abs/2403.10446",
+                  "source": "web"
+                },
+                {
+                  "title": "Retrieval-Augmented Generation: A Comprehensive Survey of \u2026",
+                  "abstract": "Retrieval-Augmented Generation (RAG) has emerged as a powerful paradigm to enhance large language models (LLMs) by \u2026",
+                  "url": "https://arxiv.org/html/2506.00054v1",
+                  "source": "web"
+                },
+                {
+                  "title": "Mitigating Large Language Model Hallucinations through Retrieval ...",
+                  "abstract": "1.2 Retrieval-Augmented Generation as a Response m an external corpus at inference time and conditions generation on the \u2026",
+                  "url": "https://www.abhishekbote.com/assets/Abhishek_Bote_RAG_Research.pdf",
+                  "source": "web"
+                },
+                {
+                  "title": "Rowen: Adaptive Retrieval-Augmented Generation for Hallucination ...",
+                  "abstract": "Dec 6, 2025 \u00b7 To balance the use of parametric knowledge within LLMs and external information, in this study, we present Rowen, a \u2026",
+                  "url": "https://dl.acm.org/doi/10.1145/3767695.3769500",
+                  "source": "web"
+                },
+                {
+                  "title": "A Hallucination Aware Retrieval Augmented Generation Framework \u2026",
+                  "abstract": "This section presents the proposed hallucination-aware Retrieval-Augmented Generation (RAG) framework, designed to reduce \u2026",
+                  "url": "https://ijirt.org/publishedpaper/IJIRT202312_PAPER.pdf",
+                  "source": "web"
+                },
+                {
+                  "title": "Dynamic RAG with hybrid retrieval: A novel approach to robust LLMs \u2026",
+                  "abstract": "This section presents the proposed enhanced Retrieval-Augmented Generation (RAG) framework, a novel approach designed to \u2026",
+                  "url": "https://www.sciencedirect.com/science/article/pii/S092523122602309X",
+                  "source": "web"
+                },
+                {
+                  "title": "Why Retrieval Doesn't Cure Everything: A Review of Hallucination in ...",
+                  "abstract": "J. Chen, H. Lin, X. Han, and L. Sun, \u201cBenchmarking large language models in retrieval-augmented generation,\u201d in Proc. AAAI Conf. \u2026",
+                  "url": "https://ijisrt.com/assets/upload/files/IJISRT26SEP724.pdf",
+                  "source": "web"
+                },
+                {
+                  "title": "Evidence-Aligned Entity Verication for Hallucination Detection in ...",
+                  "abstract": "AG is employed to enhance hallucination detection by addressing information updating challenges. To address RHD, we propose a \u2026",
+                  "url": "https://aclanthology.org/2026.findings-acl.1477.pdf",
+                  "source": "web"
+                }
+              ]
+            },
+            {
+              "tool": "search_github",
+              "args": {
+                "query": "RAG hallucination factual accuracy benchmark paper",
+                "max_results": 5
+              },
+              "result": []
+            },
+            {
+              "action": "answer",
+              "text": ""
+            }
+          ]
+        },
+        {
+          "agent": "collector",
+          "sub_task": "RAG vs fine-tuning for LLM performance and knowledge retrieval",
+          "papers_found": 14,
+          "calls_used": 4,
+          "trace": [
+            {
+              "tool": "search_semantic_scholar",
+              "args": {
+                "query": "RAG vs fine-tuning knowledge retrieval LLM",
+                "max_results": 5,
+                "year": "2023-"
+              },
+              "result": [
+                {
+                  "title": "Fine-tuning vs RAG: A Position Paper from the Perspective of LLM-based Cybersecurity Modeling",
+                  "abstract": "Large Language Models (LLMs) have revolutionized Natural Language Processing (NLP) tasks, enabling critical capabilities in fields such as business and finance with their cybersecurity analysis. In particular, LLMs are becoming vital in cybersecurity in providing more accurate solutions to different types of threats, vulnerabilities, and security challenges through pattern recognition, intelligent response generation, and automating threat detection. Although LLMs are pre-trained with a large am",
+                  "url": "https://www.semanticscholar.org/paper/9c2aca834c1c9846844b82c358ab263cd7b5cbf7",
+                  "year": 2026,
+                  "citations": 1,
+                  "source": "semantic_scholar",
+                  "authors": "Mohammad Amaz Uddin, Iqbal H. Sarker"
+                },
+                {
+                  "title": "Fine-tuning with RAG for Improving LLM Learning of New Skills",
+                  "abstract": "Large language model (LLM) agents deployed for multi-step tasks frequently fail in predictable ways: attempting actions with unmet preconditions, issuing redundant commands, or mishandling environment constraints. While retrieval-augmented generation (RAG) can improve performance by providing runtime guidance, it requires maintaining external knowledge databases and adds computational overhead at every deployment. We propose a simple pipeline that converts inference-time retrieval into learned c",
+                  "url": "https://www.semanticscholar.org/paper/47464b50cf60bb6def3dc4dfe507377cb86af949",
+                  "year": 2025,
+                  "citations": 6,
+                  "source": "semantic_scholar",
+                  "authors": "Humaid Ibrahim, Nikolai Rozanov, Marek Rei"
+                },
+                {
+                  "title": "Domain Fine-Tuning vs. Retrieval-Augmented Generation for Medical Multiple-Choice Question Answering: A Controlled Comparison at the 4B-Parameter Scale",
+                  "abstract": "Practitioners deploying small open-weight large language models (LLMs) for medical question answering face a recurring design choice: invest in a domain-fine-tuned model, or keep a general-purpose model and inject domain knowledge at inference time via retrieval-augmented generation (RAG). We isolate this trade-off by holding model size, prompt template, decoding temperature, retrieval pipeline, and evaluation protocol fixed, and varying only (i) whether the model has been domain-adapted (Gemma ",
+                  "url": "https://www.semanticscholar.org/paper/8e3cc7911f4f3156cac69f66de5e7da0f89d2ea6",
+                  "year": 2026,
+                  "citations": 1,
+                  "source": "semantic_scholar",
+                  "authors": "A. Buskila"
+                },
+                {
+                  "title": "Domain-Specific Retrieval-Augmented Generation Using Vector Stores, Knowledge Graphs, and Tensor Factorization",
+                  "abstract": "Large Language Models (LLMs) are pre-trained on large-scale corpora and excel in numerous general natural language processing (NLP) tasks, such as question answering (QA). Despite their advanced language capabilities, when it comes to domain-specific and knowledge-intensive tasks, LLMs suffer from hallucinations, knowledge cut-offs, and lack of knowledge attributions. Additionally, fine tuning LLMs' intrinsic knowledge to highly specific domains is an expensive and time consuming process. The re",
+                  "url": "https://www.semanticscholar.org/paper/b565394952065c37345fb75fb66e84709b6402a3",
+                  "year": 2024,
+                  "citations": 34,
+                  "source": "semantic_scholar",
+                  "authors": "Ryan C. Barron, Vesselin Grantcharov, Selma Wanna"
+                },
+                {
+                  "title": "Can Large Language Models Perform Retrieval-Augmented Generation as Multi-Hop Reasoning Over Knowledge Graphs?",
+                  "abstract": "Retrieval-Augmented Generation (RAG) enhances Large Language Models (LLMs) by grounding their outputs in external knowledge. However, conventional chunk-based retrieval methods are limited in handling complex multi-hop questions due to their lack of structural reasoning and semantic alignment. In this work, we propose a novel pipeline where an LLM performs multi-hop subgraph retrieval over a knowledge graph (KG), followed by hallucination detection using triplet-level graph alignment. The final ",
+                  "url": "https://www.semanticscholar.org/paper/9feadf3ce9890a69a1dfe3225b616013335f9608",
+                  "year": 2025,
+                  "citations": 1,
+                  "source": "semantic_scholar",
+                  "authors": "M. A. Hamid, S. El-Regaily, Mostafa M. Aref"
+                }
+              ]
+            },
+            {
+              "tool": "search_arxiv",
+              "args": {
+                "max_results": 5,
+                "query": "retrieval augmented generation vs fine-tuning LLM"
+              },
+              "result": [
+                {
+                  "title": "Automated Literature Review Using NLP Techniques and LLM-Based Retrieval-Augmented Generation",
+                  "abstract": "This research presents and compares multiple approaches to automate the generation of literature reviews using several Natural Language Processing (NLP) techniques and retrieval-augmented generation (RAG) with a Large Language Model (LLM). The ever-increasing number of research articles provides a huge challenge for manual literature review. It has resulted in an increased demand for automation. Developing a system capable of automatically generating the literature reviews from only the PDF file",
+                  "url": "http://arxiv.org/abs/2411.18583v1",
+                  "year": 2024,
+                  "source": "arxiv",
+                  "authors": "Nurshat Fateh Ali, Md. Mahdi Mohtasim, Shakil Mosharrof"
+                },
+                {
+                  "title": "MUST-RAG: MUSical Text Question Answering with Retrieval Augmented Generation",
+                  "abstract": "Recent advancements in Large language models (LLMs) have demonstrated remarkable capabilities across diverse domains. While they exhibit strong zero-shot performance on various tasks, LLMs' effectiveness in music-related applications remains limited due to the relatively small proportion of music-specific knowledge in their training data. To address this limitation, we propose MusT-RAG, a comprehensive framework based on Retrieval Augmented Generation (RAG) to adapt general-purpose LLMs for text",
+                  "url": "http://arxiv.org/abs/2507.23334v2",
+                  "year": 2025,
+                  "source": "arxiv",
+                  "authors": "Daeyong Kwon, SeungHeon Doh, Juhan Nam"
+                },
+                {
+                  "title": "EVOR: Evolving Retrieval for Code Generation",
+                  "abstract": "Recently the retrieval-augmented generation (RAG) has been successfully applied in code generation. However, existing pipelines for retrieval-augmented code generation (RACG) employ static knowledge bases with a single source, limiting the adaptation capabilities of Large Language Models (LLMs) to domains they have insufficient knowledge of. In this work, we develop a novel pipeline, EVOR, that employs the synchronous evolution of both queries and diverse knowledge bases. On two realistic settin",
+                  "url": "http://arxiv.org/abs/2402.12317v2",
+                  "year": 2024,
+                  "source": "arxiv",
+                  "authors": "Hongjin Su, Shuyang Jiang, Yuhang Lai"
+                },
+                {
+                  "title": "RETA-LLM: A Retrieval-Augmented Large Language Model Toolkit",
+                  "abstract": "Although Large Language Models (LLMs) have demonstrated extraordinary capabilities in many domains, they still have a tendency to hallucinate and generate fictitious responses to user requests. This problem can be alleviated by augmenting LLMs with information retrieval (IR) systems (also known as retrieval-augmented LLMs). Applying this strategy, LLMs can generate more factual texts in response to user input according to the relevant content retrieved by IR systems from external corpora as refe",
+                  "url": "http://arxiv.org/abs/2306.05212v1",
+                  "year": 2023,
+                  "source": "arxiv",
+                  "authors": "Jiongnan Liu, Jiajie Jin, Zihan Wang"
+                },
+                {
+                  "title": "Riddle Me This! Stealthy Membership Inference for Retrieval-Augmented Generation",
+                  "abstract": "Retrieval-Augmented Generation (RAG) enables Large Language Models (LLMs) to generate grounded responses by leveraging external knowledge databases without altering model parameters. Although the absence of weight tuning prevents leakage via model parameters, it introduces the risk of inference adversaries exploiting retrieved documents in the model's context. Existing methods for membership inference and data extraction often rely on jailbreaking or carefully crafted unnatural queries, which ca",
+                  "url": "http://arxiv.org/abs/2502.00306v2",
+                  "year": 2025,
+                  "source": "arxiv",
+                  "authors": "Ali Naseh, Yuefeng Peng, Anshuman Suri"
+                }
+              ]
+            },
+            {
+              "tool": "search_semantic_scholar",
+              "args": {
+                "max_results": 5,
+                "query": "\"RAG vs fine-tuning\" OR \"fine-tuning vs RAG\""
+              },
+              "error": "Semantic Scholar API: exhausted retries (429)"
+            },
+            {
+              "tool": "search_arxiv",
+              "args": {
+                "query": "\"fine-tuning\" AND \"retrieval-augmented\" comparative OR comparison",
+                "max_results": 5
+              },
+              "result": [
+                {
+                  "title": "A Comparison of Independent and Joint Fine-tuning Strategies for Retrieval-Augmented Generation",
+                  "abstract": "A Comparison of Independent and Joint Fine-tuning Strategies for Retrieval-Augmented Generation Download PDF Neal Gregory Lawton, Alfy Samuel, Anoop Kumar, Daben Liu Published: 20 Aug 2025, Retrieval augmented generation (RAG) is a popular framework for question answering that is powered by two large language models (LLMs): an embedding model that retrieves context documents from a database that are relevant to a given question, and a generator model that uses the retrieved context to generate a",
+                  "url": "http://arxiv.org/abs/2510.01600v2",
+                  "year": 2025,
+                  "source": "arxiv",
+                  "authors": "Neal Gregory Lawton, Alfy Samuel, Anoop Kumar"
+                },
+                {
+                  "title": "Differentially Private Fine-tuning of Language Models",
+                  "abstract": "We give simpler, sparser, and faster algorithms for differentially private fine-tuning of large-scale pre-trained language models, which achieve the state-of-the-art privacy versus utility tradeoffs on many standard NLP tasks. We propose a meta-framework for this problem, inspired by the recent success of highly parameter-efficient methods for fine-tuning. Our experiments show that differentially private adaptations of these approaches outperform previous private algorithms in three important di",
+                  "url": "http://arxiv.org/abs/2110.06500v2",
+                  "year": 2021,
+                  "source": "arxiv",
+                  "authors": "Da Yu, Saurabh Naik, Arturs Backurs"
+                },
+                {
+                  "title": "Fine-tuning with Very Large Dropout",
+                  "abstract": "It is impossible today to pretend that the practice of machine learning is always compatible with the idea that training and testing data follow the same distribution. Several authors have recently used ensemble techniques to show how scenarios involving multiple data distributions are best served by representations that are both richer than those obtained by regularizing for the best in-distribution performance, and richer than those obtained under the influence of the implicit sparsity bias of",
+                  "url": "http://arxiv.org/abs/2403.00946v3",
+                  "year": 2024,
+                  "source": "arxiv",
+                  "authors": "Jianyu Zhang, L\u00e9on Bottou"
+                },
+                {
+                  "title": "MUST-RAG: MUSical Text Question Answering with Retrieval Augmented Generation",
+                  "abstract": "Recent advancements in Large language models (LLMs) have demonstrated remarkable capabilities across diverse domains. While they exhibit strong zero-shot performance on various tasks, LLMs' effectiveness in music-related applications remains limited due to the relatively small proportion of music-specific knowledge in their training data. To address this limitation, we propose MusT-RAG, a comprehensive framework based on Retrieval Augmented Generation (RAG) to adapt general-purpose LLMs for text",
+                  "url": "http://arxiv.org/abs/2507.23334v2",
+                  "year": 2025,
+                  "source": "arxiv",
+                  "authors": "Daeyong Kwon, SeungHeon Doh, Juhan Nam"
+                },
+                {
+                  "title": "Learning to Perform Complex Tasks through Compositional Fine-Tuning of Language Models",
+                  "abstract": "How to usefully encode compositional task structure has long been a core challenge in AI. Recent work in chain of thought prompting has shown that for very large neural language models (LMs), explicitly demonstrating the inferential steps involved in a target task may improve performance over end-to-end learning that focuses on the target task alone. However, chain of thought prompting has significant limitations due to its dependency on huge pretrained LMs. In this work, we present compositiona",
+                  "url": "http://arxiv.org/abs/2210.12607v1",
+                  "year": 2022,
+                  "source": "arxiv",
+                  "authors": "Victor S. Bursztyn, David Demeter, Doug Downey"
+                }
+              ]
+            },
+            {
+              "action": "answer",
+              "text": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "agent": "critic",
+      "round": 1,
+      "verdict": "approve",
+      "gaps": [],
+      "papers_kept": 20,
+      "reasoning": "The collected papers thoroughly address the research question. Foundational surveys (e.g., [0], [1], [11]) define RAG mechanisms, while numerous studies ([10], [12], [13], [14], [16], [26]) analyze how external knowledge grounding mitigates hallucinations and improves factual accuracy. In addition, comparative papers ([18], [20]) assess RAG versus fine-tuning for factual precision, and advanced architectures like Graph RAG ([2], [3], [22]) and hybrid retrieval ([15]) are well represented. Non-paper repositories (GitHub lists 5\u20139) and unrelated generic fine-tuning papers (29\u201331) have been excluded.",
+      "latency_s": 12.83
+    },
+    {
+      "agent": "writer",
+      "report_length": 6184,
+      "latency_s": 27.64
+    },
+    {
+      "agent": "grounding",
+      "latency_s": 10.66,
+      "grounded": true,
+      "reason": "ok",
+      "supported_fraction": 0.897,
+      "sentences_checked": 29,
+      "min_score": 0.085
+    }
+  ],
+  "latency_s": 492.02
+}

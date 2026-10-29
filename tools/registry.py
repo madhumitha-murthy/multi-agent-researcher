@@ -29,6 +29,9 @@ def execute_tool(name: str, args: dict) -> dict:
             return {"result": [result] if name == "read_url" else result}
         if isinstance(result, dict) and "error" in result:
             return result
+        # Check if list items contain errors (e.g. API failures)
+        if isinstance(result, list) and result and isinstance(result[0], dict) and "error" in result[0]:
+            return {"error": result[0]["error"]}
         return {"result": result}
     except Exception as e:
         return {"error": f"{name} failed: {e}"}

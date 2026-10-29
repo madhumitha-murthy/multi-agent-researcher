@@ -12,7 +12,7 @@ You ask a research question. Four agents collaborate to produce a grounded, cite
 
 1. **Planner** decomposes the question into 2-3 focused sub-tasks
 2. **Collectors** run in parallel — each is a ReAct agent that autonomously decides which tools to call (ArXiv, Semantic Scholar, web search, GitHub, URL reader)
-3. **Critic** evaluates the collected papers, removes irrelevant ones, and identifies gaps. If gaps exist, it sends new sub-tasks back to the collectors (up to 2 feedback rounds)
+3. **Critic** evaluates the collected sources, removes irrelevant ones, and identifies gaps. If gaps exist, it sends new sub-tasks back to the collectors (up to 2 feedback rounds)
 4. **Writer** synthesises everything into a structured report with citations
 5. **Grounding Check** verifies the report is actually supported by the collected sources using embedding similarity
 
@@ -70,9 +70,9 @@ python main.py "What are the latest approaches to reducing hallucinations in LLM
 ```
 
 Output includes:
-- **Agent trace** — which agents ran, how many papers found, critic decisions
+- **Agent trace** — which agents ran, how many sources found, critic decisions
 - **Research report** — structured with Overview, Key Findings, Approaches Compared, Gaps, References
-- **Source list** — all papers with titles, sources, years, citation counts
+- **Source list** — all sources with titles, types, years, citation counts
 - **Grounding score** — what fraction of the report is supported by sources
 - **JSON result** — full trace saved to `results/`
 
@@ -87,13 +87,13 @@ multi-agent-researcher/
 ├── agents/
 │   ├── planner.py             # Decomposes question into sub-tasks
 │   ├── collector.py           # ReAct agent — searches using tools
-│   ├── critic.py              # Evaluates papers, finds gaps
-│   ├── writer.py              # Synthesises report from papers
+│   ├── critic.py              # Evaluates sources, finds gaps
+│   ├── writer.py              # Synthesises report from sources
 │   └── grounding.py           # Embedding similarity check
 ├── tools/
 │   ├── registry.py            # Central tool registry + executor
-│   ├── arxiv_search.py        # ArXiv API search
-│   ├── s2_search.py           # Semantic Scholar API search
+│   ├── arxiv_search.py        # ArXiv API search (shared client + lock)
+│   ├── s2_search.py           # Semantic Scholar API search (lock + retry)
 │   ├── web_search.py          # DuckDuckGo web search
 │   ├── github_search.py       # GitHub REST API search
 │   └── url_reader.py          # URL content extraction
@@ -101,7 +101,7 @@ multi-agent-researcher/
 │   ├── questions.json         # 10 evaluation questions
 │   └── run_eval.py            # Batch evaluation with metrics
 ├── tests/
-│   └── test_agents.py         # 17 tests (all agents + graph + grounding)
+│   └── test_agents.py         # 17+ tests (all agents + graph + grounding)
 ├── requirements.txt
 └── pyproject.toml
 ```
@@ -112,10 +112,11 @@ multi-agent-researcher/
 python -m pytest tests/ -v
 ```
 
-17 tests cover:
+Tests cover:
 - Each agent individually (planner, collector, critic, writer)
 - Grounding check (pass, fail, no sources, sentence splitting)
 - Full graph integration (single pass + critic feedback loop)
+- JSON fence stripping (Gemini wraps JSON in markdown fences)
 - Tool registry error handling
 - Eval metrics computation
 
@@ -125,7 +126,7 @@ All tests use `FakeModel` — no API calls needed.
 
 | Component | Technology |
 |-----------|-----------|
-| LLM | Gemini 3.8 Flash (function calling) |
+| LLM | Gemini 3.7 Flash (function calling + JSON mode) |
 | Orchestration | LangGraph StateGraph |
 | Grounding | sentence-transformers (all-MiniLM-L6-v2) |
 | Academic Search | ArXiv API, Semantic Scholar API |
@@ -140,10 +141,10 @@ Edit `config.py` to adjust:
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `GEMINI_MODEL` | `gemini-3.8-flash` | Which Gemini model to use |
+| `GEMINI_MODEL` | `gemini-3.7-flash` | Which Gemini model to use |
 | `MAX_COLLECTOR_CALLS` | `4` | Tool calls per collector agent |
 | `MAX_CRITIC_ROUNDS` | `2` | Max feedback loops before forcing approval |
-| `GEMINI_RATE_DELAY` | `4.5s` | Delay between API calls (free tier: 15/min) |
+| `GEMINI_RATE_DELAY` | `1s` | Delay between API calls (paid tier) |
 
 ## Evaluation
 
@@ -152,9 +153,9 @@ python -m eval.run_eval
 ```
 
 Runs 10 research questions and reports:
-- Average papers found per question
+- Average sources found per question
 - Critic round usage
-- Multi-source rate (papers from 2+ sources)
+- Multi-source rate (sources from 2+ providers)
 - Latency per question
 
 Results saved to `results/eval_metrics.json`.
@@ -163,8 +164,7 @@ Results saved to `results/eval_metrics.json`.
 
 Example reports and traces committed in `results/` — run with Gemini 3.7 Flash:
 
-| Query | Papers | Grounding | Time |
-|-------|--------|-----------|------|
-| Reducing hallucinations in LLMs | 23 | 93.1% | 153s |
-| Retrieval augmented generation (RAG) | 7 | 84.2% | 148s |
-| Multi-modal AI (vision + language) | 16 | 89.3% | 157s |
+| Query | Sources | Types | Critic | Grounding | Time |
+|-------|---------|-------|--------|-----------|------|
+| Reducing hallucinations in LLMs | 7 | 5 S2, 2 web | 2 rounds (feedback loop) | 82.6% | 608s |
+| Retrieval augmented generation (RAG) | 20 | 10 S2, 2 ArXiv, 8 web | 1 round (approved) | 89.7% | 492s |

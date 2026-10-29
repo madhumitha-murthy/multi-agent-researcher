@@ -1,6 +1,7 @@
 # llm.py - Gemini wrapper with rate limiting + FakeModel for tests
 
 import os
+import re
 import threading
 import time
 from dataclasses import dataclass, field
@@ -17,11 +18,17 @@ class ModelResponse:
 
 
 class ChatModel(Protocol):
-    def call(self, system: str, messages: list[dict], tools: list | None = None) -> ModelResponse: ...
+    def call(self, system: str, messages: list[dict], tools: list | None = None, json_mode: bool = False) -> ModelResponse: ...
+
+
+def strip_json_fences(text: str) -> str:
+    """Strip ```json ... ``` fences that Gemini often wraps around JSON."""
+    m = re.search(r"```(?:json)?\s*\n?(.*?)```", text, re.DOTALL)
+    return m.group(1).strip() if m else text.strip()
 
 
 class GeminiModel:
-    """Gemini with manual tool execution and rate limiting for free tier."""
+    """Gemini with manual tool execution and rate limiting."""
 
     def __init__(self, model: str = GEMINI_MODEL):
         from google import genai
@@ -37,7 +44,7 @@ class GeminiModel:
                 time.sleep(GEMINI_RATE_DELAY - elapsed)
             self._last_call = time.time()
 
-    def call(self, system: str, messages: list[dict], tools: list | None = None) -> ModelResponse:
+    def call(self, system: str, messages: list[dict], tools: list | None = None, json_mode: bool = False) -> ModelResponse:
         from google.genai import types
 
         self._rate_limit()
@@ -47,6 +54,9 @@ class GeminiModel:
             temperature=0.0,
             automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
         )
+
+        if json_mode:
+            config.response_mime_type = "application/json"
 
         if tools:
             config.tools = [
@@ -69,8 +79,8 @@ class GeminiModel:
                 )
                 break
             except Exception as e:
-                if "503" in str(e) and attempt < 2:
-                    time.sleep(10 * (attempt + 1))  # 10s, 20s backoff
+                if ("503" in str(e) or "429" in str(e)) and attempt < 2:
+                    time.sleep(10 * (attempt + 1))
                     continue
                 raise
 
@@ -131,6 +141,6 @@ class FakeModel:
         self.responses = list(responses)
         self.calls: list[dict] = []
 
-    def call(self, system: str, messages: list[dict], tools: list | None = None) -> ModelResponse:
+    def call(self, system: str, messages: list[dict], tools: list | None = None, json_mode: bool = False) -> ModelResponse:
         self.calls.append({"system": system, "messages": list(messages)})
         return self.responses.pop(0) if self.responses else ModelResponse()

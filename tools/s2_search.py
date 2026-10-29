@@ -1,5 +1,9 @@
 # tools/s2_search.py - Search Semantic Scholar for research papers
 
+import os
+import threading
+import time
+
 import requests
 
 from config import S2_API_URL, S2_FIELDS, S2_MAX_PER_QUERY
@@ -18,20 +22,52 @@ TOOL_SCHEMA = {
     },
 }
 
+_lock = threading.Lock()
+_last_call = 0.0
+
 
 def search_semantic_scholar(query: str, max_results: int = 5, year: str = "") -> list[dict]:
+    global _last_call
     n = max(1, min(int(max_results), S2_MAX_PER_QUERY))
 
     params = {"query": query, "limit": n, "fields": S2_FIELDS}
     if year:
         params["year"] = year
 
-    try:
-        resp = requests.get(S2_API_URL, params=params, timeout=10)
-        resp.raise_for_status()
-        data = resp.json().get("data", [])
-    except Exception as e:
-        return [{"error": f"Semantic Scholar API failed: {e}"}]
+    headers = {}
+    api_key = os.getenv("S2_API_KEY")
+    if api_key:
+        headers["x-api-key"] = api_key
+
+    with _lock:
+        # Enforce minimum 1.1s between S2 calls
+        elapsed = time.time() - _last_call
+        if elapsed < 1.1:
+            time.sleep(1.1 - elapsed)
+
+        data = None
+        for attempt in range(3):
+            try:
+                resp = requests.get(S2_API_URL, params=params, headers=headers, timeout=10)
+                if resp.status_code == 429:
+                    wait = 2 ** (attempt + 1)  # 2s, 4s, 8s backoff
+                    time.sleep(wait)
+                    continue
+                resp.raise_for_status()
+                data = resp.json().get("data", [])
+                break
+            except requests.exceptions.HTTPError:
+                if attempt < 2:
+                    time.sleep(2 ** (attempt + 1))
+                    continue
+                return [{"error": f"Semantic Scholar API failed: HTTP {resp.status_code}"}]
+            except Exception as e:
+                return [{"error": f"Semantic Scholar API failed: {e}"}]
+
+        _last_call = time.time()
+
+    if data is None:
+        return [{"error": "Semantic Scholar API: exhausted retries (429)"}]
 
     papers = []
     for p in data:

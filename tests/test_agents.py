@@ -5,7 +5,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from llm import FakeModel, ModelResponse
+from llm import FakeModel, ModelResponse, strip_json_fences
 from agents.planner import run_planner
 from agents.critic import run_critic
 from agents.writer import run_writer
@@ -25,6 +25,36 @@ def high_sim(sentences, sources):
 def low_sim(sentences, sources):
     """Returns low similarity scores so grounding always fails."""
     return [[0.1] * len(sources) for _ in sentences]
+
+
+# --- JSON fence stripping tests ---
+
+def test_strip_json_fences_with_fences():
+    raw = '```json\n{"sub_tasks": ["a", "b"]}\n```'
+    assert strip_json_fences(raw) == '{"sub_tasks": ["a", "b"]}'
+
+
+def test_strip_json_fences_without_fences():
+    raw = '{"sub_tasks": ["a", "b"]}'
+    assert strip_json_fences(raw) == '{"sub_tasks": ["a", "b"]}'
+
+
+def test_planner_handles_fenced_json():
+    model = FakeModel([
+        ModelResponse(text='```json\n{"sub_tasks": ["topic A", "topic B"]}\n```')
+    ])
+    tasks = run_planner(model, "some question")
+    assert tasks == ["topic A", "topic B"]
+
+
+def test_critic_handles_fenced_json():
+    papers = [{"title": "P1", "source": "arxiv", "year": 2024, "abstract": "About X"}]
+    model = FakeModel([
+        ModelResponse(text='```json\n{"verdict": "more_research", "gaps": ["missing Y"], "keep_papers": [0], "reasoning": "Need Y"}\n```')
+    ])
+    result = run_critic(model, "q", papers, round_num=1)
+    assert result["verdict"] == "more_research"
+    assert "missing Y" in result["gaps"]
 
 
 # --- Planner tests ---

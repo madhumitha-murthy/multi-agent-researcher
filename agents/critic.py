@@ -2,11 +2,13 @@
 
 import json
 
+from llm import strip_json_fences
+
 SYSTEM_PROMPT = """You are a research critic. You receive papers collected by research agents and evaluate them.
 
 Your job:
 1. Check if the papers adequately cover the research question
-2. Remove duplicates or irrelevant papers
+2. Remove duplicates or irrelevant papers (web pages, dictionaries, unrelated repos)
 3. Identify any gaps in coverage
 4. Decide: is more research needed, or do we have enough?
 
@@ -14,6 +16,7 @@ Rules:
 - If there's a clear gap, specify what topic needs more research
 - If coverage is adequate (5+ relevant papers covering different angles), approve
 - Be specific about gaps, not vague
+- Remove sources that are not actual research (dictionary definitions, restaurant pages, generic web content)
 
 Output ONLY valid JSON:
 {"verdict": "approve" or "more_research", "gaps": ["specific gap 1"], "keep_papers": [0, 1, 3], "reasoning": "why"}
@@ -39,10 +42,10 @@ def run_critic(model, question: str, papers: list[dict], round_num: int) -> dict
     )
 
     messages = [{"role": "user", "text": prompt}]
-    resp = model.call(SYSTEM_PROMPT, messages)
+    resp = model.call(SYSTEM_PROMPT, messages, json_mode=True)
 
     try:
-        parsed = json.loads(resp.text)
+        parsed = json.loads(strip_json_fences(resp.text))
         verdict = parsed.get("verdict", "approve")
         gaps = parsed.get("gaps", [])
         keep_indices = parsed.get("keep_papers", list(range(len(papers))))
@@ -58,10 +61,10 @@ def run_critic(model, question: str, papers: list[dict], round_num: int) -> dict
             "reasoning": reasoning,
         }
     except (json.JSONDecodeError, KeyError):
-        # If parsing fails, approve with all papers
+        # If parsing fails, store what we got for debugging
         return {
             "verdict": "approve",
             "gaps": [],
             "papers": papers,
-            "reasoning": "Critic response parsing failed, approving as-is",
+            "reasoning": f"Critic response parsing failed, approving as-is. Raw: {resp.text[:300]}",
         }

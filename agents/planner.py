@@ -2,6 +2,8 @@
 
 import json
 
+from llm import strip_json_fences
+
 SYSTEM_PROMPT = """You are a research planner. Given a research question, break it into 2-3 focused sub-tasks that can be searched independently.
 
 Rules:
@@ -16,10 +18,10 @@ Output format:
 def run_planner(model, question: str) -> list[str]:
     """Use the LLM to decompose a question into sub-tasks."""
     messages = [{"role": "user", "text": question}]
-    resp = model.call(SYSTEM_PROMPT, messages)
+    resp = model.call(SYSTEM_PROMPT, messages, json_mode=True)
 
     try:
-        parsed = json.loads(resp.text)
+        parsed = json.loads(strip_json_fences(resp.text))
         tasks = parsed.get("sub_tasks", [])
         if isinstance(tasks, list) and len(tasks) >= 1:
             return tasks[:3]
