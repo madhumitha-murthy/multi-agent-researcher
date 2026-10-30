@@ -15,6 +15,8 @@ class ModelResponse:
     text: str = ""
     tool_calls: list[dict] = field(default_factory=list)
     raw: object = None
+    input_tokens: int = 0
+    output_tokens: int = 0
 
 
 class ChatModel(Protocol):
@@ -90,7 +92,16 @@ class GeminiModel:
             for fc in (resp.function_calls or [])
         ]
         text = "".join(p.text for p in (content.parts or []) if getattr(p, "text", None))
-        return ModelResponse(text=text.strip(), tool_calls=calls, raw=content)
+
+        # Extract token usage if available
+        usage = getattr(resp, "usage_metadata", None)
+        input_tok = getattr(usage, "prompt_token_count", 0) or 0
+        output_tok = getattr(usage, "candidates_token_count", 0) or 0
+
+        return ModelResponse(
+            text=text.strip(), tool_calls=calls, raw=content,
+            input_tokens=input_tok, output_tokens=output_tok,
+        )
 
     @staticmethod
     def _build_contents(messages: list[dict]) -> list:
@@ -137,10 +148,19 @@ class GeminiModel:
 class FakeModel:
     """Scripted responses for tests. No API calls."""
 
-    def __init__(self, responses: list[ModelResponse]):
+    def __init__(self, responses: list[ModelResponse], fake_tokens: tuple[int, int] = (10, 5)):
         self.responses = list(responses)
         self.calls: list[dict] = []
+        self._fake_tokens = fake_tokens  # (input, output) per call
 
     def call(self, system: str, messages: list[dict], tools: list | None = None, json_mode: bool = False) -> ModelResponse:
         self.calls.append({"system": system, "messages": list(messages)})
-        return self.responses.pop(0) if self.responses else ModelResponse()
+        if self.responses:
+            resp = self.responses.pop(0)
+            # Apply fake token counts if not already set
+            if resp.input_tokens == 0:
+                resp.input_tokens = self._fake_tokens[0]
+            if resp.output_tokens == 0:
+                resp.output_tokens = self._fake_tokens[1]
+            return resp
+        return ModelResponse(input_tokens=self._fake_tokens[0], output_tokens=self._fake_tokens[1])

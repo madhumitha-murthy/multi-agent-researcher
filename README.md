@@ -53,7 +53,7 @@ No API keys needed for any tool. Only Gemini requires an API key.
 ## Setup
 
 ```bash
-git clone https://github.com/your-username/multi-agent-researcher.git
+git clone https://github.com/madhumitham/multi-agent-researcher.git
 cd multi-agent-researcher
 pip install -r requirements.txt
 ```
@@ -101,7 +101,7 @@ multi-agent-researcher/
 │   ├── questions.json         # 10 evaluation questions
 │   └── run_eval.py            # Batch evaluation with metrics
 ├── tests/
-│   └── test_agents.py         # 17+ tests (all agents + graph + grounding)
+│   └── test_agents.py         # 22 tests (all agents + graph + grounding)
 ├── requirements.txt
 └── pyproject.toml
 ```
@@ -114,13 +114,13 @@ python -m pytest tests/ -v
 
 Tests cover:
 - Each agent individually (planner, collector, critic, writer)
-- Grounding check (pass, fail, no sources, sentence splitting)
+- Grounding check (pass, fail, no sources, sentence splitting, reference stripping)
 - Full graph integration (single pass + critic feedback loop)
 - JSON fence stripping (Gemini wraps JSON in markdown fences)
 - Tool registry error handling
 - Eval metrics computation
 
-All tests use `FakeModel` — no API calls needed.
+All 22 tests use `FakeModel` — no API calls needed.
 
 ## Tech Stack
 
@@ -159,6 +159,17 @@ Runs 10 research questions and reports:
 - Latency per question
 
 Results saved to `results/eval_metrics.json`.
+
+## Limitations
+
+Things this project does **not** do well (yet):
+
+- **Grounding measures topic similarity, not entailment.** The embedding-based check (cosine similarity on MiniLM) catches off-topic sentences but cannot detect on-topic fabrications. A sentence like "GPT-4 achieves 99% accuracy on TruthfulQA" would pass if the sources discuss GPT-4 and TruthfulQA, even if the number is invented. A proper NLI-based entailment model would be needed.
+- **Reports are built from abstract fragments.** The writer sees 300 characters of each abstract; the critic sees 200. The system does not read full papers — it synthesises from snippets.
+- **Tool errors are common.** ArXiv and Semantic Scholar rate-limit aggressively on free tiers. Expect 1–4 tool failures per run. The system continues with partial results rather than retrying.
+- **Prompt injection via `read_url`.** Fetched web pages (up to 3,000 chars) are fed directly into the agent's context. A malicious page could attempt to influence the model. Treat outputs as untrusted.
+- **No cost tracking at the model level.** Token counts are logged per-run but Gemini pricing is not computed. A typical run uses the free tier; on the paid tier, expect ~$0.01–0.05 per query.
+- **Runs are slow.** 5–10 minutes per query due to rate limiting and sequential LLM calls within each collector.
 
 ## Example Reports
 

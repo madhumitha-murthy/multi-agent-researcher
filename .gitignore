@@ -3,8 +3,10 @@ __pycache__/
 venv/
 .venv/
 .env
-results/eval_*.json
+# Keep eval results tracked — they demonstrate the system works
+# results/eval_*.json
 .pytest_cache/
 .DS_Store
 *.egg-info/
 vectorstore/
+.claude/

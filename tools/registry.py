@@ -1,4 +1,4 @@
-# tools/registry.py - Central tool registry
+# tools/registry.py - Central tool registry with per-agent tool sets
 
 from tools.arxiv_search import TOOL_SCHEMA as ARXIV_SCHEMA
 from tools.arxiv_search import search_arxiv
@@ -6,12 +6,19 @@ from tools.github_search import TOOL_SCHEMA as GITHUB_SCHEMA
 from tools.github_search import search_github
 from tools.s2_search import TOOL_SCHEMA as S2_SCHEMA
 from tools.s2_search import search_semantic_scholar
+from tools.s2_search import GET_REFERENCES_SCHEMA, GET_CITATIONS_SCHEMA
+from tools.s2_search import get_references, get_citations
 from tools.url_reader import TOOL_SCHEMA as URL_SCHEMA
 from tools.url_reader import read_url
 from tools.web_search import TOOL_SCHEMA as WEB_SCHEMA
 from tools.web_search import search_web
 
+# Legacy: all tools for the old collector
 COLLECTOR_TOOLS = [ARXIV_SCHEMA, S2_SCHEMA, WEB_SCHEMA, GITHUB_SCHEMA, URL_SCHEMA]
+
+# Per-agent tool sets for v2
+PAPER_AGENT_TOOLS = [ARXIV_SCHEMA, S2_SCHEMA, GET_REFERENCES_SCHEMA, GET_CITATIONS_SCHEMA]
+WEB_AGENT_TOOLS = [WEB_SCHEMA, GITHUB_SCHEMA, URL_SCHEMA]
 
 TOOL_FUNCTIONS = {
     "search_arxiv": search_arxiv,
@@ -19,6 +26,8 @@ TOOL_FUNCTIONS = {
     "search_web": search_web,
     "search_github": search_github,
     "read_url": read_url,
+    "get_references": get_references,
+    "get_citations": get_citations,
 }
 
 

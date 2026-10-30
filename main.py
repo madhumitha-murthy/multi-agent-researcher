@@ -1,4 +1,4 @@
-# main.py - CLI entry point
+# main.py - CLI entry point for the supervisor-based multi-agent researcher
 # Usage: python main.py "your research question here"
 
 import json
@@ -8,6 +8,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from evidence import EvidenceStore
 from graph import build_graph, run_research
 from llm import GeminiModel
 
@@ -42,16 +43,14 @@ def main():
     print("=" * 60)
     for event in result["trace"]:
         agent = event.get("agent", "?")
-        if agent == "planner":
-            print(f"  [Planner] Sub-tasks: {event['sub_tasks']}")
-        elif agent == "collectors_batch":
-            print(f"  [Collectors] {event['n_collectors']} agents -> {event['total_papers']} papers ({event['latency_s']}s)")
-        elif agent == "critic":
-            print(f"  [Critic] Round {event['round']}: {event['verdict']} | Kept {event['papers_kept']} papers")
-            if event["gaps"]:
-                print(f"           Gaps: {event['gaps']}")
+        if agent == "supervisor":
+            print(f"  [Supervisor] → {event.get('decision', '?')} | {event.get('reason', '')[:80]}")
+        elif agent in ("paper_agent", "web_agent"):
+            print(f"  [{agent}] {event.get('summary', '')}")
+        elif agent == "fact_checker":
+            print(f"  [Fact-checker] {event.get('summary', '')}")
         elif agent == "writer":
-            print(f"  [Writer] Report: {event['report_length']} chars ({event['latency_s']}s)")
+            print(f"  [Writer] {event.get('summary', '')}")
 
     # Print report
     print("\n" + "=" * 60)
@@ -59,20 +58,21 @@ def main():
     print("=" * 60)
     print(result["report"])
 
-    # Print sources
+    # Print evidence summary
+    store = EvidenceStore.from_dict(result["evidence"])
     print("\n" + "=" * 60)
-    print(f"PAPERS FOUND ({len(result['papers'])})")
+    print(f"EVIDENCE ({len(store)} total, {len(store.supported())} supported)")
     print("=" * 60)
-    for p in result["papers"]:
-        cite = f" | Citations: {p['citations']}" if p.get("citations") else ""
-        print(f"  - {p['title']} ({p.get('source', '?')}, {p.get('year', '?')}{cite})")
+    for e in store.supported():
+        print(f"  [{e.id}] {e.claim[:80]} — {e.source_title[:40]}")
 
-    # Grounding
-    g = result.get("grounding", {})
-    grounded = g.get("grounded", "?")
-    frac = g.get("supported_fraction", "?")
-    print(f"\nGrounding: {'PASS' if grounded else 'WARN'} ({frac} supported)")
-    print(f"Total latency: {result['latency_s']}s | Critic rounds: {result['critic_rounds']}")
+    # Stats
+    budget = result.get("budget", {})
+    print(f"\nStop reason: {result['stop_reason']}")
+    print(f"Supervisor turns: {result['supervisor_turns']}")
+    print(f"Latency: {result['latency_s']}s")
+    print(f"Tokens: {budget.get('tokens_in', '?')}in / {budget.get('tokens_out', '?')}out")
+    print(f"Cost: ${budget.get('cost_usd', 0):.4f}")
 
     path = save_result(result)
     print(f"Full result saved: {path}")

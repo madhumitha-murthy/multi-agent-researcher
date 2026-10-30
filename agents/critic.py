@@ -19,15 +19,15 @@ Rules:
 - Remove sources that are not actual research (dictionary definitions, restaurant pages, generic web content)
 
 Output ONLY valid JSON:
-{"verdict": "approve" or "more_research", "gaps": ["specific gap 1"], "keep_papers": [0, 1, 3], "reasoning": "why"}
+{"verdict": "approve" or "more_research", "gaps": ["specific gap 1"], "keep_papers": [1, 2, 4], "reasoning": "why"}
 
-keep_papers is a list of indices (0-based) of papers to keep."""
+keep_papers is a list of paper numbers (1-based, matching the numbering shown above) to keep."""
 
 
 def run_critic(model, question: str, papers: list[dict], round_num: int) -> dict:
     """Evaluate papers and decide if more research is needed."""
     paper_list = ""
-    for i, p in enumerate(papers):
+    for i, p in enumerate(papers, 1):
         paper_list += (
             f"\n[{i}] {p['title']}"
             f"\n    Source: {p.get('source', '?')} | Year: {p.get('year', '?')}"
@@ -46,13 +46,19 @@ def run_critic(model, question: str, papers: list[dict], round_num: int) -> dict
 
     try:
         parsed = json.loads(strip_json_fences(resp.text))
+        if not isinstance(parsed, dict):
+            raise ValueError("Expected JSON object")
+
         verdict = parsed.get("verdict", "approve")
         gaps = parsed.get("gaps", [])
-        keep_indices = parsed.get("keep_papers", list(range(len(papers))))
+        keep_indices = parsed.get("keep_papers", list(range(1, len(papers) + 1)))
         reasoning = parsed.get("reasoning", "")
 
-        # Filter papers to only kept ones
-        kept = [papers[i] for i in keep_indices if i < len(papers)]
+        # Validate indices: 1-based from LLM, convert to 0-based
+        kept = []
+        for i in keep_indices:
+            if isinstance(i, int) and 1 <= i <= len(papers):
+                kept.append(papers[i - 1])
 
         return {
             "verdict": verdict,
@@ -60,8 +66,7 @@ def run_critic(model, question: str, papers: list[dict], round_num: int) -> dict
             "papers": kept if kept else papers,
             "reasoning": reasoning,
         }
-    except (json.JSONDecodeError, KeyError):
-        # If parsing fails, store what we got for debugging
+    except (json.JSONDecodeError, KeyError, ValueError, TypeError):
         return {
             "verdict": "approve",
             "gaps": [],

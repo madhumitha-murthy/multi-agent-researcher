@@ -29,10 +29,15 @@ def run_collector(model, sub_task: str, max_calls: int = MAX_COLLECTOR_CALLS) ->
     papers = []
     trace = []
     calls_used = 0
+    tool_errors = 0
+    total_input_tokens = 0
+    total_output_tokens = 0
 
     for _ in range(max_calls + 2):  # extra iterations for the final answer
         tools = registry.COLLECTOR_TOOLS if calls_used < max_calls else None
         resp = model.call(SYSTEM_PROMPT, messages, tools)
+        total_input_tokens += resp.input_tokens
+        total_output_tokens += resp.output_tokens
 
         # If model wants to call tools
         if resp.tool_calls and calls_used < max_calls:
@@ -42,8 +47,12 @@ def run_collector(model, sub_task: str, max_calls: int = MAX_COLLECTOR_CALLS) ->
             })
 
             for tc in resp.tool_calls:
+                if calls_used >= max_calls:
+                    break
                 result = registry.execute_tool(tc["name"], tc.get("args", {}))
                 calls_used += 1
+                if "error" in result:
+                    tool_errors += 1
                 trace.append({"tool": tc["name"], "args": tc["args"], **result})
 
                 # Collect papers from successful results
@@ -71,5 +80,8 @@ def run_collector(model, sub_task: str, max_calls: int = MAX_COLLECTOR_CALLS) ->
         "sub_task": sub_task,
         "papers": unique,
         "calls_used": calls_used,
+        "tool_errors": tool_errors,
+        "input_tokens": total_input_tokens,
+        "output_tokens": total_output_tokens,
         "trace": trace,
     }

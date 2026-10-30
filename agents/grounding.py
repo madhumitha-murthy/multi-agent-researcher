@@ -4,7 +4,11 @@ import re
 from functools import lru_cache
 from typing import Callable
 
-SENT_THRESHOLD = 0.35  # lower than tech-news-agent because report sentences are more synthesised
+# Thresholds chosen empirically on 2 eval runs (hallucination + RAG reports).
+# SENT_THRESHOLD 0.35 catches off-topic sentences but NOT on-topic fabrications —
+# cosine similarity on MiniLM embeddings measures topic overlap, not factual entailment.
+# A proper entailment model (e.g. NLI-based) would be needed to catch fabricated claims.
+SENT_THRESHOLD = 0.35
 REPORT_THRESHOLD = 0.5  # at least 50% of sentences must be supported
 
 Similarity = Callable[[list[str], list[str]], list[list[float]]]
@@ -24,6 +28,12 @@ def embedding_similarity(sentences: list[str], sources: list[str]) -> list[list[
 
 
 def split_sentences(text: str) -> list[str]:
+    # Strip everything after ## References — those lines are just source titles
+    # and would trivially match, inflating the grounding score
+    ref_match = re.search(r"##\s*References", text, re.IGNORECASE)
+    if ref_match:
+        text = text[:ref_match.start()]
+
     text = re.sub(r"\[.*?\]", "", text)  # strip citation markers
     text = re.sub(r"#+\s.*", "", text)   # strip markdown headers
     parts = re.split(r"(?<=[.!?])\s+|\n+", text)

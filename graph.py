@@ -1,213 +1,357 @@
-# graph.py - LangGraph multi-agent orchestrator
+# graph.py - Supervisor-routed LangGraph multi-agent orchestrator (v2)
 #
-# Flow: planner -> collectors (parallel) -> critic -> (back to collectors OR writer)
-#
-# The critic feedback loop is the key: if the critic finds gaps,
-# it spawns new collectors to fill them. Max 2 rounds of feedback.
+# Pattern: hub-and-spoke. Workers always return to the supervisor.
+# The supervisor never sees raw source text, only structured evidence summaries.
 
 import time
 from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
-from agents.collector import run_collector
-from agents.critic import run_critic
-from agents.grounding import check_report_grounding, embedding_similarity
-from agents.planner import run_planner
+from agents.fact_checker import run_fact_checker
+from agents.paper_agent import run_paper_agent
+from agents.supervisor import run_supervisor
+from agents.web_agent import run_web_agent
 from agents.writer import run_writer
-from config import MAX_CRITIC_ROUNDS
+from budget import Budget
+from config import MAX_SUPERVISOR_TURNS, MAX_WORKER_TOOL_CALLS
+from evidence import EvidenceStore
 
 
 class ResearchState(TypedDict):
     question: str
-    sub_tasks: list[str]
-    papers: list[dict]
-    critic_round: int
-    critic_verdict: str
-    gaps: list[str]
+    evidence: dict              # EvidenceStore.to_dict()
+    next_agent: str             # set by supervisor
+    next_task: str              # instruction for the chosen worker
+    supervisor_turns: int
+    worker_log: list[dict]      # short result summary per worker call
     report: str
-    grounding: dict
+    budget: dict                # Budget.to_dict()
     trace: list[dict]
+    stop_reason: str            # "finished" | "turn_limit" | "cost_limit" | "error"
+    source_texts: dict          # url -> text, accumulated from workers
 
 
-def build_graph(model, similarity=embedding_similarity):
-    """Build the multi-agent LangGraph."""
+def build_graph(model, execute_fn=None):
+    """Build the supervisor-routed multi-agent graph.
 
-    def planner_node(state: ResearchState) -> dict:
-        t0 = time.perf_counter()
-        sub_tasks = run_planner(model, state["question"])
-        latency = round(time.perf_counter() - t0, 2)
-        return {
-            "sub_tasks": sub_tasks,
-            "trace": state["trace"] + [{
-                "agent": "planner", "sub_tasks": sub_tasks, "latency_s": latency,
-            }],
-        }
+    Args:
+        model: ChatModel or FakeModel
+        execute_fn: optional tool execution override (for testing)
+    """
 
-    def collectors_node(state: ResearchState) -> dict:
-        """Run collectors in parallel using threads. Each gets its own sub-task."""
-        from concurrent.futures import ThreadPoolExecutor, as_completed
+    def supervisor_node(state: ResearchState) -> dict:
+        budget = Budget.from_dict(state["budget"])
+        store = EvidenceStore.from_dict(state["evidence"])
 
-        all_papers = list(state["papers"])
-        events = []
-        t0 = time.perf_counter()
-
-        # Run collectors concurrently — each thread gets its own sub-task
-        with ThreadPoolExecutor(max_workers=len(state["sub_tasks"])) as pool:
-            futures = {
-                pool.submit(run_collector, model, task): task
-                for task in state["sub_tasks"]
+        # Check budget before calling LLM
+        budget_reason = budget.exhausted()
+        if budget_reason:
+            n_supported = len(store.supported())
+            if n_supported > 0 and not state.get("report"):
+                return {
+                    "next_agent": "writer",
+                    "next_task": "write report with available evidence (budget exhausted)",
+                    "supervisor_turns": state["supervisor_turns"] + 1,
+                    "trace": state["trace"] + [{
+                        "agent": "supervisor", "decision": "writer",
+                        "reason": f"budget exhausted: {budget_reason}",
+                    }],
+                    "budget": budget.to_dict(),
+                }
+            return {
+                "next_agent": "FINISH",
+                "next_task": "",
+                "stop_reason": budget_reason,
+                "supervisor_turns": state["supervisor_turns"] + 1,
+                "trace": state["trace"] + [{
+                    "agent": "supervisor", "decision": "FINISH",
+                    "reason": f"budget exhausted: {budget_reason}",
+                }],
+                "budget": budget.to_dict(),
             }
-            for future in as_completed(futures):
-                task = futures[future]
-                result = future.result()
-                all_papers.extend(result["papers"])
-                events.append({
-                    "agent": "collector",
-                    "sub_task": task,
-                    "papers_found": len(result["papers"]),
-                    "calls_used": result["calls_used"],
-                    "trace": result["trace"],
-                })
 
-        # Deduplicate across all collectors
-        seen = set()
-        unique = []
-        for p in all_papers:
-            key = p["title"].lower().strip()
-            if key not in seen:
-                seen.add(key)
-                unique.append(p)
-
-        latency = round(time.perf_counter() - t0, 2)
-        return {
-            "papers": unique,
-            "sub_tasks": [],  # clear sub_tasks after collection
-            "trace": state["trace"] + [{
-                "agent": "collectors_batch",
-                "n_collectors": len(events),
-                "total_papers": len(unique),
-                "latency_s": latency,
-                "details": events,
-            }],
-        }
-
-    def critic_node(state: ResearchState) -> dict:
         t0 = time.perf_counter()
-        round_num = state["critic_round"] + 1
-        result = run_critic(model, state["question"], state["papers"], round_num)
+        result = run_supervisor(
+            model=model,
+            question=state["question"],
+            evidence_store=store,
+            worker_log=state["worker_log"],
+            budget=budget,
+        )
         latency = round(time.perf_counter() - t0, 2)
 
+        budget.record_turn()
+        budget.record_tokens(result["tokens_in"], result["tokens_out"])
+
         return {
-            "papers": result["papers"],
-            "critic_round": round_num,
-            "critic_verdict": result["verdict"],
-            "gaps": result["gaps"],
+            "next_agent": result["next_agent"],
+            "next_task": result["task"],
+            "supervisor_turns": state["supervisor_turns"] + 1,
+            "budget": budget.to_dict(),
             "trace": state["trace"] + [{
-                "agent": "critic",
-                "round": round_num,
-                "verdict": result["verdict"],
-                "gaps": result["gaps"],
-                "papers_kept": len(result["papers"]),
-                "reasoning": result["reasoning"],
+                "agent": "supervisor",
+                "decision": result["next_agent"],
+                "task": result["task"],
+                "reason": result["reasoning"],
                 "latency_s": latency,
             }],
         }
 
-    def gap_filler_node(state: ResearchState) -> dict:
-        """Convert critic's gaps into new sub-tasks for collectors."""
-        return {"sub_tasks": state["gaps"]}
+    def paper_agent_node(state: ResearchState) -> dict:
+        store = EvidenceStore.from_dict(state["evidence"])
+        budget = Budget.from_dict(state["budget"])
+        source_texts = dict(state.get("source_texts", {}))
+
+        try:
+            t0 = time.perf_counter()
+            result = run_paper_agent(
+                model=model,
+                task=state["next_task"],
+                evidence_store=store,
+                max_tool_calls=MAX_WORKER_TOOL_CALLS,
+                execute_fn=execute_fn,
+            )
+            latency = round(time.perf_counter() - t0, 2)
+
+            budget.record_tool_calls(result["tool_calls"])
+            budget.record_tokens(result["tokens_in"], result["tokens_out"])
+            source_texts.update(result.get("source_texts", {}))
+
+            log_entry = {
+                "agent": "paper_agent",
+                "task": state["next_task"],
+                "evidence_added": result["evidence_added"],
+                "summary": result["summary"],
+                "tool_calls": result["tool_calls"],
+                "tool_errors": result["tool_errors"],
+                "tokens_in": result["tokens_in"],
+                "tokens_out": result["tokens_out"],
+                "latency_s": latency,
+            }
+        except Exception as e:
+            log_entry = {
+                "agent": "paper_agent",
+                "task": state["next_task"],
+                "evidence_added": [],
+                "summary": f"Error: {str(e)[:200]}",
+                "error": str(e)[:200],
+            }
+
+        return {
+            "evidence": store.to_dict(),
+            "worker_log": state["worker_log"] + [log_entry],
+            "budget": budget.to_dict(),
+            "source_texts": source_texts,
+            "trace": state["trace"] + [{
+                "agent": "paper_agent", **log_entry,
+            }],
+        }
+
+    def web_agent_node(state: ResearchState) -> dict:
+        store = EvidenceStore.from_dict(state["evidence"])
+        budget = Budget.from_dict(state["budget"])
+        source_texts = dict(state.get("source_texts", {}))
+
+        try:
+            t0 = time.perf_counter()
+            result = run_web_agent(
+                model=model,
+                task=state["next_task"],
+                evidence_store=store,
+                max_tool_calls=MAX_WORKER_TOOL_CALLS,
+                execute_fn=execute_fn,
+            )
+            latency = round(time.perf_counter() - t0, 2)
+
+            budget.record_tool_calls(result["tool_calls"])
+            budget.record_tokens(result["tokens_in"], result["tokens_out"])
+            source_texts.update(result.get("source_texts", {}))
+
+            log_entry = {
+                "agent": "web_agent",
+                "task": state["next_task"],
+                "evidence_added": result["evidence_added"],
+                "summary": result["summary"],
+                "tool_calls": result["tool_calls"],
+                "tool_errors": result["tool_errors"],
+                "tokens_in": result["tokens_in"],
+                "tokens_out": result["tokens_out"],
+                "latency_s": latency,
+            }
+        except Exception as e:
+            log_entry = {
+                "agent": "web_agent",
+                "task": state["next_task"],
+                "evidence_added": [],
+                "summary": f"Error: {str(e)[:200]}",
+                "error": str(e)[:200],
+            }
+
+        return {
+            "evidence": store.to_dict(),
+            "worker_log": state["worker_log"] + [log_entry],
+            "budget": budget.to_dict(),
+            "source_texts": source_texts,
+            "trace": state["trace"] + [{
+                "agent": "web_agent", **log_entry,
+            }],
+        }
+
+    def fact_checker_node(state: ResearchState) -> dict:
+        store = EvidenceStore.from_dict(state["evidence"])
+        budget = Budget.from_dict(state["budget"])
+        source_texts = state.get("source_texts", {})
+
+        try:
+            t0 = time.perf_counter()
+            result = run_fact_checker(model, store, source_texts)
+            latency = round(time.perf_counter() - t0, 2)
+
+            budget.record_tokens(result["total_tokens_in"], result["total_tokens_out"])
+
+            log_entry = {
+                "agent": "fact_checker",
+                "task": state["next_task"],
+                "summary": (
+                    f"Checked {result['checked']}: "
+                    f"{result['supported']} supported, "
+                    f"{result['unsupported']} unsupported, "
+                    f"{result['contradicted']} contradicted, "
+                    f"{result['quote_not_found']} quote-not-found"
+                ),
+                "checked": result["checked"],
+                "supported": result["supported"],
+                "unsupported": result["unsupported"],
+                "contradicted": result["contradicted"],
+                "quote_not_found": result["quote_not_found"],
+                "latency_s": latency,
+            }
+        except Exception as e:
+            log_entry = {
+                "agent": "fact_checker",
+                "task": state["next_task"],
+                "summary": f"Error: {str(e)[:200]}",
+                "error": str(e)[:200],
+            }
+
+        return {
+            "evidence": store.to_dict(),
+            "worker_log": state["worker_log"] + [log_entry],
+            "budget": budget.to_dict(),
+            "trace": state["trace"] + [{
+                "agent": "fact_checker", **log_entry,
+            }],
+        }
 
     def writer_node(state: ResearchState) -> dict:
-        t0 = time.perf_counter()
-        report = run_writer(model, state["question"], state["papers"])
-        latency = round(time.perf_counter() - t0, 2)
+        store = EvidenceStore.from_dict(state["evidence"])
+        budget = Budget.from_dict(state["budget"])
+
+        try:
+            t0 = time.perf_counter()
+            supported = store.supported()
+            result = run_writer(model, state["question"], supported)
+            latency = round(time.perf_counter() - t0, 2)
+
+            if isinstance(result, dict) and "needs_more_evidence" in result:
+                log_entry = {
+                    "agent": "writer",
+                    "task": state["next_task"],
+                    "summary": f"Needs more evidence: {result['needs_more_evidence']}",
+                    "needs_more_evidence": result["needs_more_evidence"],
+                    "latency_s": latency,
+                }
+                report = ""
+            else:
+                report = result
+                log_entry = {
+                    "agent": "writer",
+                    "task": state["next_task"],
+                    "summary": f"Wrote report ({len(report)} chars) from {len(supported)} supported claims",
+                    "report_length": len(report),
+                    "latency_s": latency,
+                }
+        except Exception as e:
+            report = ""
+            log_entry = {
+                "agent": "writer",
+                "task": state["next_task"],
+                "summary": f"Error: {str(e)[:200]}",
+                "error": str(e)[:200],
+            }
+
         return {
             "report": report,
+            "worker_log": state["worker_log"] + [log_entry],
+            "budget": budget.to_dict(),
             "trace": state["trace"] + [{
-                "agent": "writer",
-                "report_length": len(report),
-                "latency_s": latency,
+                "agent": "writer", **log_entry,
             }],
         }
 
-    def grounding_node(state: ResearchState) -> dict:
-        """Check if the writer's report is actually supported by the papers."""
-        t0 = time.perf_counter()
-        verdict = check_report_grounding(state["report"], state["papers"], similarity)
-        latency = round(time.perf_counter() - t0, 2)
-
-        warning = ""
-        if not verdict["grounded"]:
-            warning = (
-                "\n\n---\n**Note:** This report may contain claims not fully supported "
-                "by the sources collected. Please verify key claims against the references."
-            )
-
-        return {
-            "report": state["report"] + warning,
-            "grounding": verdict,
-            "trace": state["trace"] + [{
-                "agent": "grounding", "latency_s": latency, **verdict,
-            }],
-        }
-
-    def route_after_critic(state: ResearchState) -> str:
-        """Critic says 'more_research' -> back to collectors. Otherwise -> writer."""
-        if (
-            state["critic_verdict"] == "more_research"
-            and state["gaps"]
-            and state["critic_round"] < MAX_CRITIC_ROUNDS
-        ):
-            return "gap_filler"
-        return "writer"
+    def route_after_supervisor(state: ResearchState) -> str:
+        agent = state.get("next_agent", "FINISH")
+        if agent == "FINISH":
+            return END
+        if agent in ("paper_agent", "web_agent", "fact_checker", "writer"):
+            return agent
+        return END  # safety fallback
 
     # Wire the graph
     g = StateGraph(ResearchState)
-    g.add_node("planner", planner_node)
-    g.add_node("collectors", collectors_node)
-    g.add_node("critic", critic_node)
-    g.add_node("gap_filler", gap_filler_node)
+    g.add_node("supervisor", supervisor_node)
+    g.add_node("paper_agent", paper_agent_node)
+    g.add_node("web_agent", web_agent_node)
+    g.add_node("fact_checker", fact_checker_node)
     g.add_node("writer", writer_node)
-    g.add_node("grounding", grounding_node)
 
-    g.add_edge(START, "planner")
-    g.add_edge("planner", "collectors")
-    g.add_edge("collectors", "critic")
-    g.add_conditional_edges("critic", route_after_critic, {
-        "gap_filler": "gap_filler",
-        "writer": "writer",
-    })
-    g.add_edge("gap_filler", "collectors")  # feedback loop
-    g.add_edge("writer", "grounding")
-    g.add_edge("grounding", END)
+    g.add_edge(START, "supervisor")
+    g.add_conditional_edges("supervisor", route_after_supervisor)
+
+    # Workers always return to supervisor
+    for worker in ("paper_agent", "web_agent", "fact_checker", "writer"):
+        g.add_edge(worker, "supervisor")
 
     return g.compile()
 
 
 def run_research(graph, question: str) -> dict[str, Any]:
-    """Run the full multi-agent research pipeline."""
+    """Run the full supervisor-based research pipeline."""
+    budget = Budget()
+    store = EvidenceStore()
     t0 = time.perf_counter()
+
     state = graph.invoke(
         {
             "question": question,
-            "sub_tasks": [],
-            "papers": [],
-            "critic_round": 0,
-            "critic_verdict": "",
-            "gaps": [],
+            "evidence": store.to_dict(),
+            "next_agent": "",
+            "next_task": "",
+            "supervisor_turns": 0,
+            "worker_log": [],
             "report": "",
-            "grounding": {},
+            "budget": budget.to_dict(),
             "trace": [],
+            "stop_reason": "",
+            "source_texts": {},
         },
-        config={"recursion_limit": 30},
+        config={"recursion_limit": 2 * MAX_SUPERVISOR_TURNS + 10},
     )
+
+    final_store = EvidenceStore.from_dict(state["evidence"])
+    final_budget = Budget.from_dict(state["budget"])
+
     return {
         "question": question,
         "report": state["report"],
-        "papers": state["papers"],
-        "critic_rounds": state["critic_round"],
-        "grounding": state["grounding"],
+        "evidence": state["evidence"],
+        "supported_claims": len(final_store.supported()),
+        "total_claims": len(final_store),
+        "supervisor_turns": state["supervisor_turns"],
+        "stop_reason": state.get("stop_reason") or "finished",
+        "budget": final_budget.to_dict(),
         "trace": state["trace"],
+        "worker_log": state["worker_log"],
         "latency_s": round(time.perf_counter() - t0, 2),
     }

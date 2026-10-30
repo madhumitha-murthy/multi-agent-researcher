@@ -82,5 +82,109 @@ def search_semantic_scholar(query: str, max_results: int = 5, year: str = "") ->
             "citations": p.get("citationCount", 0),
             "source": "semantic_scholar",
             "authors": ", ".join(a.get("name", "") for a in authors[:3]),
+            "paperId": p.get("paperId", ""),
         })
     return papers
+
+
+# --- S2 Graph API: references and citations ---
+
+S2_GRAPH_URL = "https://api.semanticscholar.org/graph/v1/paper"
+
+GET_REFERENCES_SCHEMA = {
+    "name": "get_references",
+    "description": (
+        "Get the reference list (papers cited BY a given paper). "
+        "Use a Semantic Scholar paper ID or URL."
+    ),
+    "params": {
+        "type": "object",
+        "properties": {
+            "paper_id": {
+                "type": "string",
+                "description": "Semantic Scholar paper ID or URL",
+            },
+            "max_results": {"type": "integer", "description": "Max references to return (1-20)"},
+        },
+        "required": ["paper_id"],
+    },
+}
+
+GET_CITATIONS_SCHEMA = {
+    "name": "get_citations",
+    "description": (
+        "Get papers that CITE a given paper. "
+        "Use a Semantic Scholar paper ID or URL."
+    ),
+    "params": {
+        "type": "object",
+        "properties": {
+            "paper_id": {
+                "type": "string",
+                "description": "Semantic Scholar paper ID or URL",
+            },
+            "max_results": {"type": "integer", "description": "Max citations to return (1-20)"},
+        },
+        "required": ["paper_id"],
+    },
+}
+
+
+def _s2_graph_call(paper_id: str, endpoint: str, max_results: int = 10) -> list[dict]:
+    """Shared helper for references/citations endpoints."""
+    global _last_call
+    n = max(1, min(int(max_results), 20))
+
+    headers = {}
+    api_key = os.getenv("S2_API_KEY")
+    if api_key:
+        headers["x-api-key"] = api_key
+
+    fields = "title,abstract,url,year,citationCount,authors"
+    url = f"{S2_GRAPH_URL}/{paper_id}/{endpoint}"
+    params = {"fields": f"citedPaper.{fields}" if endpoint == "references" else f"citingPaper.{fields}",
+              "limit": n}
+
+    with _lock:
+        elapsed = time.time() - _last_call
+        if elapsed < 1.1:
+            time.sleep(1.1 - elapsed)
+
+        try:
+            resp = requests.get(url, params=params, headers=headers, timeout=10)
+            if resp.status_code == 429:
+                time.sleep(4)
+                resp = requests.get(url, params=params, headers=headers, timeout=10)
+            resp.raise_for_status()
+            data = resp.json().get("data", [])
+        except Exception as e:
+            return [{"error": f"S2 {endpoint} failed: {e}"}]
+        finally:
+            _last_call = time.time()
+
+    key = "citedPaper" if endpoint == "references" else "citingPaper"
+    papers = []
+    for item in data:
+        p = item.get(key, {})
+        if not p or not p.get("title"):
+            continue
+        authors = p.get("authors", [])
+        papers.append({
+            "title": p["title"],
+            "abstract": (p.get("abstract") or "")[:500],
+            "url": p.get("url", ""),
+            "year": p.get("year"),
+            "citations": p.get("citationCount", 0),
+            "source": "semantic_scholar",
+            "authors": ", ".join(a.get("name", "") for a in (authors or [])[:3]),
+            "paperId": p.get("paperId", ""),
+        })
+    return papers
+
+
+def get_references(paper_id: str, max_results: int = 10) -> list[dict]:
+    return _s2_graph_call(paper_id, "references", max_results)
+
+
+def get_citations(paper_id: str, max_results: int = 10) -> list[dict]:
+    return _s2_graph_call(paper_id, "citations", max_results)

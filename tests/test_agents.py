@@ -49,7 +49,7 @@ def test_planner_handles_fenced_json():
 def test_critic_handles_fenced_json():
     papers = [{"title": "P1", "source": "arxiv", "year": 2024, "abstract": "About X"}]
     model = FakeModel([
-        ModelResponse(text='```json\n{"verdict": "more_research", "gaps": ["missing Y"], "keep_papers": [0], "reasoning": "Need Y"}\n```')
+        ModelResponse(text='```json\n{"verdict": "more_research", "gaps": ["missing Y"], "keep_papers": [1], "reasoning": "Need Y"}\n```')
     ])
     result = run_critic(model, "q", papers, round_num=1)
     assert result["verdict"] == "more_research"
@@ -128,7 +128,7 @@ def test_collector_deduplicates_papers():
 def test_critic_approves_good_coverage():
     papers = [{"title": f"Paper {i}", "source": "arxiv", "year": 2024, "abstract": f"About topic {i}"} for i in range(6)]
     model = FakeModel([
-        ModelResponse(text='{"verdict": "approve", "gaps": [], "keep_papers": [0,1,2,3,4,5], "reasoning": "Good coverage"}')
+        ModelResponse(text='{"verdict": "approve", "gaps": [], "keep_papers": [1,2,3,4,5,6], "reasoning": "Good coverage"}')
     ])
     result = run_critic(model, "test question", papers, round_num=1)
     assert result["verdict"] == "approve"
@@ -139,7 +139,7 @@ def test_critic_approves_good_coverage():
 def test_critic_requests_more_research():
     papers = [{"title": "Paper A", "source": "arxiv", "year": 2024, "abstract": "Only about detection"}]
     model = FakeModel([
-        ModelResponse(text='{"verdict": "more_research", "gaps": ["mitigation methods"], "keep_papers": [0], "reasoning": "Missing mitigation"}')
+        ModelResponse(text='{"verdict": "more_research", "gaps": ["mitigation methods"], "keep_papers": [1], "reasoning": "Missing mitigation"}')
     ])
     result = run_critic(model, "test question", papers, round_num=1)
     assert result["verdict"] == "more_research"
@@ -156,7 +156,8 @@ def test_critic_handles_bad_json():
 
 # --- Writer tests ---
 
-def test_writer_produces_report():
+def test_writer_produces_report_v1_compat():
+    """v1 compatibility: writer accepts paper dicts."""
     papers = [
         {"title": "Paper A", "abstract": "Method A for X", "url": "http://a", "year": 2024, "source": "arxiv", "authors": "Smith"},
         {"title": "Paper B", "abstract": "Method B for X", "url": "http://b", "year": 2024, "source": "s2", "authors": "Jones"},
@@ -199,6 +200,18 @@ def test_split_sentences():
     assert len(sents) >= 2
 
 
+def test_split_sentences_strips_references():
+    text = (
+        "## Overview\nThis report covers hallucination detection methods.\n\n"
+        "## References\n1. Hallucination Detection Paper (2024)\n2. RAG Survey (2023)\n"
+    )
+    sents = split_sentences(text)
+    # Reference lines should be stripped — none should appear
+    for s in sents:
+        assert "Hallucination Detection Paper" not in s
+        assert "RAG Survey" not in s
+
+
 # --- Tool registry tests ---
 
 def test_unknown_tool_returns_error():
@@ -206,10 +219,10 @@ def test_unknown_tool_returns_error():
     assert "error" in result
 
 
-# --- Graph integration test ---
+# --- Graph integration test (v1 pipeline, now in baselines) ---
 
 def test_full_graph_runs():
-    from graph import build_graph, run_research
+    from baselines.pipeline.graph import build_graph, run_research
 
     fake_papers = [{"title": "P1", "abstract": "About X", "url": "http://p1", "source": "arxiv"}]
 
@@ -220,7 +233,7 @@ def test_full_graph_runs():
         ModelResponse(tool_calls=[{"name": "search_arxiv", "args": {"query": "topic A"}}]),
         ModelResponse(text="Found papers."),
         # Critic: approve
-        ModelResponse(text='{"verdict": "approve", "gaps": [], "keep_papers": [0], "reasoning": "ok"}'),
+        ModelResponse(text='{"verdict": "approve", "gaps": [], "keep_papers": [1], "reasoning": "ok"}'),
         # Writer - needs sentences > 25 chars for grounding to check
         ModelResponse(text="## Overview\nThis report provides a comprehensive analysis of topic A and its applications. The research covers multiple approaches to solving the core problem. Several papers have been reviewed and synthesised below.\n\n## References\n1. P1"),
     ])
@@ -247,10 +260,10 @@ def test_full_graph_runs():
         reg.execute_tool = original
 
 
-# --- Graph with critic feedback loop ---
+# --- Graph with critic feedback loop (v1 pipeline) ---
 
 def test_critic_feedback_loop():
-    from graph import build_graph, run_research
+    from baselines.pipeline.graph import build_graph, run_research
 
     paper_a = {"title": "Paper A", "abstract": "Detection", "url": "http://a", "source": "arxiv"}
     paper_b = {"title": "Paper B", "abstract": "Mitigation", "url": "http://b", "source": "arxiv"}
@@ -269,12 +282,12 @@ def test_critic_feedback_loop():
         ModelResponse(tool_calls=[{"name": "search_arxiv", "args": {"query": "detection"}}]),
         ModelResponse(text="Found detection papers."),
         # Critic round 1: needs more
-        ModelResponse(text='{"verdict": "more_research", "gaps": ["mitigation methods"], "keep_papers": [0], "reasoning": "Missing mitigation"}'),
+        ModelResponse(text='{"verdict": "more_research", "gaps": ["mitigation methods"], "keep_papers": [1], "reasoning": "Missing mitigation"}'),
         # Collector round 2 (gap filler)
         ModelResponse(tool_calls=[{"name": "search_arxiv", "args": {"query": "mitigation"}}]),
         ModelResponse(text="Found mitigation papers."),
         # Critic round 2: approve
-        ModelResponse(text='{"verdict": "approve", "gaps": [], "keep_papers": [0, 1], "reasoning": "Good now"}'),
+        ModelResponse(text='{"verdict": "approve", "gaps": [], "keep_papers": [1, 2], "reasoning": "Good now"}'),
         # Writer
         ModelResponse(text="## Overview\nReport covering both detection and mitigation."),
     ])
