@@ -10,7 +10,7 @@ import json
 import re
 
 from evidence import Evidence, EvidenceStore
-from llm import ModelResponse, strip_json_fences
+from llm import strip_json_fences
 
 BATCH_SIZE = 10  # claims per LLM call
 
@@ -67,6 +67,7 @@ def run_fact_checker(
         source_text = source_texts.get(ev.source_url, "")
         if not quote_in_source(ev.quote, source_text):
             store.set_status(ev.id, "unsupported", "quote not found in source")
+            ev.compute_confidence()
             quote_not_found += 1
         else:
             needs_llm_check.append(ev)
@@ -94,6 +95,10 @@ def run_fact_checker(
             else:
                 store.set_status(eid, "unsupported", reason)
                 llm_unsupported += 1
+            # Compute confidence after verdict is set
+            ev = store.get(eid)
+            if ev:
+                ev.compute_confidence()
 
     return {
         "checked": len(unverified),

@@ -4,10 +4,14 @@ from tools.arxiv_search import TOOL_SCHEMA as ARXIV_SCHEMA
 from tools.arxiv_search import search_arxiv
 from tools.github_search import TOOL_SCHEMA as GITHUB_SCHEMA
 from tools.github_search import search_github
+from tools.s2_search import (
+    GET_CITATIONS_SCHEMA,
+    GET_REFERENCES_SCHEMA,
+    get_citations,
+    get_references,
+    search_semantic_scholar,
+)
 from tools.s2_search import TOOL_SCHEMA as S2_SCHEMA
-from tools.s2_search import search_semantic_scholar
-from tools.s2_search import GET_REFERENCES_SCHEMA, GET_CITATIONS_SCHEMA
-from tools.s2_search import get_references, get_citations
 from tools.url_reader import TOOL_SCHEMA as URL_SCHEMA
 from tools.url_reader import read_url
 from tools.web_search import TOOL_SCHEMA as WEB_SCHEMA

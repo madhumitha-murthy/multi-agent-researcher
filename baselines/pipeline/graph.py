@@ -10,11 +10,11 @@ from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
-from agents.collector import run_collector
-from agents.critic import run_critic
-from agents.grounding import check_report_grounding, embedding_similarity
-from agents.planner import run_planner
-from agents.writer import run_writer
+from baselines.pipeline.collector import run_collector
+from baselines.pipeline.critic import run_critic
+from baselines.pipeline.grounding import check_report_grounding, embedding_similarity
+from baselines.pipeline.planner import run_planner
+from baselines.pipeline.writer import run_writer
 from config import MAX_CRITIC_ROUNDS
 
 

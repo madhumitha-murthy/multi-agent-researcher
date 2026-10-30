@@ -5,11 +5,11 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from agents.collector import run_collector
-from agents.critic import run_critic
-from agents.grounding import check_report_grounding, split_sentences
-from agents.planner import run_planner
-from agents.writer import run_writer
+from baselines.pipeline.collector import run_collector
+from baselines.pipeline.critic import run_critic
+from baselines.pipeline.grounding import check_report_grounding, split_sentences
+from baselines.pipeline.planner import run_planner
+from baselines.pipeline.writer import run_writer
 from eval.run_eval import compute_metrics
 from llm import FakeModel, ModelResponse, strip_json_fences
 from tools.registry import execute_tool
@@ -312,20 +312,23 @@ def test_critic_feedback_loop():
         reg.execute_tool = original
 
 
-# --- Eval metrics test ---
+# --- Eval metrics test (v2) ---
 
 def test_compute_metrics():
     records = [
-        {"n_papers": 8, "latency_s": 30, "critic_rounds": 1, "report_length": 500,
-         "has_both_sources": True, "expect_multi_source": True, "error": None},
-        {"n_papers": 5, "latency_s": 25, "critic_rounds": 2, "report_length": 400,
-         "has_both_sources": False, "expect_multi_source": True, "error": None},
-        {"n_papers": 0, "latency_s": 10, "critic_rounds": 0, "report_length": 100,
-         "has_both_sources": False, "expect_multi_source": False, "error": None},
+        {"supported_claims": 5, "total_claims": 7, "supervisor_turns": 6,
+         "latency_s": 30, "report_length": 500, "stop_reason": "finished",
+         "cost_usd": 0.05, "citation_coverage": 0.8, "error": None},
+        {"supported_claims": 3, "total_claims": 4, "supervisor_turns": 4,
+         "latency_s": 25, "report_length": 400, "stop_reason": "finished",
+         "cost_usd": 0.03, "citation_coverage": 0.6, "error": None},
+        {"supported_claims": 0, "total_claims": 0, "supervisor_turns": 2,
+         "latency_s": 10, "report_length": 100, "stop_reason": "finished",
+         "cost_usd": 0.01, "citation_coverage": None, "error": None},
     ]
     m = compute_metrics(records)
     assert m["questions"] == 3
     assert m["completed"] == 3
-    assert m["avg_papers"] == 4.3
-    assert m["papers_found_rate"] == 0.667
-    assert m["multi_source_rate"] == 0.5
+    assert m["claims_found_rate"] == 0.667
+    assert m["avg_supported_claims"] == 2.7
+    assert m["avg_supervisor_turns"] == 4.0

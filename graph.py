@@ -71,6 +71,26 @@ def build_graph(model, execute_fn=None):
                 "budget": budget.to_dict(),
             }
 
+        # Guard: once a report exists, FINISH — unless the writer asked for more evidence
+        if state.get("report"):
+            last_writer = None
+            for entry in reversed(state.get("worker_log", [])):
+                if entry.get("agent") == "writer":
+                    last_writer = entry
+                    break
+            if not (last_writer and last_writer.get("needs_more_evidence")):
+                return {
+                    "next_agent": "FINISH",
+                    "next_task": "",
+                    "stop_reason": "finished",
+                    "supervisor_turns": state["supervisor_turns"] + 1,
+                    "trace": state["trace"] + [{
+                        "agent": "supervisor", "decision": "FINISH",
+                        "reason": "report already written",
+                    }],
+                    "budget": budget.to_dict(),
+                }
+
         t0 = time.perf_counter()
         result = run_supervisor(
             model=model,
@@ -263,7 +283,19 @@ def build_graph(model, execute_fn=None):
                     "latency_s": latency,
                 }
                 report = ""
+            elif isinstance(result, dict) and "report" in result:
+                report = result["report"]
+                budget.record_tokens(result["input_tokens"], result["output_tokens"])
+                log_entry = {
+                    "agent": "writer",
+                    "task": state["next_task"],
+                    "summary": f"Wrote report ({len(report)} chars) from {len(supported)} supported claims",
+                    "report_length": len(report),
+                    "citation_coverage": result["citation_coverage"],
+                    "latency_s": latency,
+                }
             else:
+                # Legacy string return (v1 compat)
                 report = result
                 log_entry = {
                     "agent": "writer",

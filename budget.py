@@ -1,7 +1,8 @@
 # budget.py - Turn, tool-call, and cost limits for research runs
 
-from dataclasses import dataclass, field
-from config import MAX_SUPERVISOR_TURNS, MAX_COST_USD, PRICE_PER_1M_INPUT, PRICE_PER_1M_OUTPUT
+from dataclasses import dataclass
+
+from config import MAX_COST_USD, MAX_SUPERVISOR_TURNS, PRICE_PER_1M_INPUT, PRICE_PER_1M_OUTPUT
 
 
 @dataclass

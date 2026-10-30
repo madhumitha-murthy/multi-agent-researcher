@@ -13,7 +13,6 @@ from agents.fact_checker import (
 from evidence import EvidenceStore
 from llm import FakeModel, ModelResponse
 
-
 # --- Normalisation helpers ---
 
 def test_normalise_collapses_whitespace():
@@ -154,11 +153,15 @@ def test_llm_contradicted_verdict():
 def test_batching_multiple_items():
     store = EvidenceStore()
     source_texts = {}
-    for i in range(3):
+    claims = [
+        ("Transformers use self-attention mechanisms for sequence modeling", "transformers use self-attention"),
+        ("RLHF aligns language models with human preferences", "RLHF aligns language models"),
+        ("Diffusion models generate high-quality images from noise", "diffusion models generate high-quality images"),
+    ]
+    for i, (claim, quote) in enumerate(claims):
         url = f"http://paper{i}"
-        store.add(f"claim {i}", f"Paper {i}", url, "arxiv",
-                  f"quote {i}", "paper_agent", "task")
-        source_texts[url] = f"The paper contains quote {i} and more content."
+        store.add(claim, f"Paper {i}", url, "arxiv", quote, "paper_agent", "task")
+        source_texts[url] = f"The paper shows that {quote} and discusses further implications."
 
     # All 3 pass deterministic check, so all go to LLM in one batch
     model = FakeModel([

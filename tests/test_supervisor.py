@@ -5,7 +5,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from agents.supervisor import run_supervisor, _apply_guards
+from agents.supervisor import _apply_guards, run_supervisor
 from budget import Budget
 from evidence import EvidenceStore
 from llm import FakeModel, ModelResponse

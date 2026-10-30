@@ -91,11 +91,13 @@ def run_react(
                     "tool": name, "args": tc.get("args", {}), **result,
                 })
 
-                # Wrap result for the agent with untrusted tags
+                # Wrap result for the agent with untrusted tags.
+                # ONLY send the wrapped text — never the raw result — so
+                # prompt-injection content is always inside <untrusted_source> tags.
                 wrapped = wrap_untrusted(result, args.get("url", ""))
                 messages.append({
                     "role": "tool", "name": name,
-                    "result": {"wrapped": wrapped, **result},
+                    "result": wrapped,
                 })
         else:
             # Final answer

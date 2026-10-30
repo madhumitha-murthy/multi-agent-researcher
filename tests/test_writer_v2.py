@@ -6,12 +6,12 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from agents.writer import (
-    run_writer,
-    _strip_invalid_citations,
     _build_references,
     _compute_citation_coverage,
+    _strip_invalid_citations,
+    run_writer,
 )
-from evidence import Evidence, EvidenceStore
+from evidence import Evidence
 from llm import FakeModel, ModelResponse
 
 
@@ -115,11 +115,14 @@ def test_writer_produces_report_with_evidence():
             "## Limitations of This Report\nLimited to 4 sources."
         ))
     ])
-    report = run_writer(model, "test question", evidence)
-    assert isinstance(report, str)
+    result = run_writer(model, "test question", evidence)
+    assert isinstance(result, dict)
+    report = result["report"]
     assert "## Overview" in report
     assert "## References" in report
     assert "[E1]" in report
+    assert result["citation_coverage"] > 0
+    assert result["input_tokens"] > 0
 
 
 def test_writer_strips_invalid_citations_in_report():
@@ -127,10 +130,12 @@ def test_writer_strips_invalid_citations_in_report():
     model = FakeModel([
         ModelResponse(text="## Overview\nClaim [E1] and fabricated [E99] and real [E2].")
     ])
-    report = run_writer(model, "test question", evidence)
+    result = run_writer(model, "test question", evidence)
+    report = result["report"]
     assert "[E1]" in report
     assert "[E2]" in report
     assert "[E99]" not in report  # stripped
+    assert "E99" in result["invalid_citations"]
 
 
 def test_writer_returns_needs_more_evidence_when_insufficient():
@@ -155,7 +160,8 @@ def test_writer_references_only_contain_cited_evidence():
     model = FakeModel([
         ModelResponse(text="## Overview\nOnly citing E1 and E3 [E1][E3].\n\n## Key Findings\n- One finding [E1]")
     ])
-    report = run_writer(model, "test question", evidence)
+    result = run_writer(model, "test question", evidence)
+    report = result["report"]
     # References should have E1 and E3, but NOT E2, E4, E5
     assert "Paper 1" in report
     assert "Paper 3" in report

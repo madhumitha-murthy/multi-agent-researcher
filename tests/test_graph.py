@@ -165,3 +165,57 @@ def test_injection_text_does_not_change_routing():
     ]
     assert "web_agent" in supervisor_decisions
     assert "paper_agent" in supervisor_decisions
+
+
+def test_finish_after_report_exists():
+    """Once a report is written, the supervisor should FINISH without another LLM call."""
+    claims = [
+        {"claim": "Transformers use self-attention for sequence modeling",
+         "source_title": "Attention Paper", "source_url": "http://paper1",
+         "source_type": "arxiv", "quote": "transformers use self-attention for sequence modeling"},
+        {"claim": "RLHF aligns language models with human preferences",
+         "source_title": "RLHF Paper", "source_url": "http://paper2",
+         "source_type": "arxiv", "quote": "RLHF aligns language models with human preferences"},
+        {"claim": "Diffusion models generate images from Gaussian noise",
+         "source_title": "Diffusion Paper", "source_url": "http://paper3",
+         "source_type": "arxiv", "quote": "diffusion models generate images from Gaussian noise"},
+    ]
+    extraction_json = json.dumps(claims)
+
+    fact_check_json = json.dumps([
+        {"id": f"E{i}", "verdict": "supported", "reason": "ok"}
+        for i in range(1, 4)
+    ])
+
+    model = FakeModel([
+        # Supervisor turn 1: paper_agent
+        ModelResponse(text='{"next_agent": "paper_agent", "task": "search", "reasoning": "start"}'),
+        # Paper agent
+        ModelResponse(tool_calls=[{"name": "search_arxiv", "args": {"query": "test"}}]),
+        ModelResponse(text="Done."),
+        ModelResponse(text=extraction_json),
+        # Supervisor turn 2: fact_checker
+        ModelResponse(text='{"next_agent": "fact_checker", "task": "verify", "reasoning": "verify claims"}'),
+        # Fact-checker
+        ModelResponse(text=fact_check_json),
+        # Supervisor turn 3: writer
+        ModelResponse(text='{"next_agent": "writer", "task": "write", "reasoning": "claims verified"}'),
+        # Writer
+        ModelResponse(text="## Overview\nFindings [E1][E2][E3].\n\n## Key Findings\n- A [E1]\n- B [E2]\n- C [E3]"),
+        # Guard should FINISH before calling the model again.
+    ])
+
+    search_result = {"result": [
+        {"title": c["source_title"], "abstract": c["quote"], "url": c["source_url"], "source": "arxiv"}
+        for c in claims
+    ]}
+
+    graph = build_graph(model, execute_fn=lambda name, args: search_result)
+    result = run_research(graph, "test question")
+
+    assert result["stop_reason"] == "finished"
+    assert result["report"] != ""
+    # The last supervisor decision should be FINISH due to the guard
+    supervisor_entries = [e for e in result["trace"] if e.get("agent") == "supervisor"]
+    assert supervisor_entries[-1]["decision"] == "FINISH"
+    assert "report already written" in supervisor_entries[-1]["reason"]

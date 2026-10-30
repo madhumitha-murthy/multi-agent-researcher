@@ -6,13 +6,12 @@
 
 import json
 import re
+import sys
 from pathlib import Path
 
-import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from evidence import EvidenceStore
-from agents.fact_checker import run_fact_checker, quote_in_source
 
 RESULTS_DIR = Path(__file__).parent.parent / "results"
 

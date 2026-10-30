@@ -23,6 +23,8 @@ MAX_SUPERVISOR_TURNS = 15      # max supervisor decisions per run
 MAX_WORKER_TOOL_CALLS = 5     # tool calls per worker agent
 MAX_COST_USD = 0.50            # cost limit per question
 
-# Gemini pricing (per 1M tokens) — update from https://ai.google.dev/pricing
-PRICE_PER_1M_INPUT = 0.10     # Gemini 2.0 Flash input
-PRICE_PER_1M_OUTPUT = 0.40    # Gemini 2.0 Flash output
+# Gemini pricing (per 1M tokens)
+# Source: https://ai.google.dev/gemini-api/docs/pricing
+# gemini-3.7-flash routes to 3.8 Flash. Introductory pricing through 2026-12-31.
+PRICE_PER_1M_INPUT = 0.75     # Gemini 3.8 Flash input
+PRICE_PER_1M_OUTPUT = 3.75    # Gemini 3.8 Flash output

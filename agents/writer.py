@@ -38,21 +38,18 @@ Rules:
 MIN_EVIDENCE_FOR_REPORT = 3  # below this, writer flags needs_more_evidence
 
 
-def run_writer(model, question: str, evidence) -> str | dict:
-    """Generate a structured research report.
+def run_writer(model, question: str, evidence: list) -> dict:
+    """Generate a structured research report from verified Evidence objects.
 
     Args:
         question: the research question
-        evidence: list of Evidence objects (v2) or list of paper dicts (v1 compat)
+        evidence: list of Evidence objects
 
     Returns:
-        str: the report text (with references appended and post-check applied)
-        dict: {"needs_more_evidence": "topic"} if evidence is too thin
+        dict with "report", "citation_coverage", "invalid_citations",
+        "input_tokens", "output_tokens"  — OR —
+        dict with "needs_more_evidence" if evidence is too thin
     """
-    # v1 compatibility
-    if evidence and isinstance(evidence, list) and isinstance(evidence[0], dict):
-        return _write_from_papers(model, question, evidence)
-
     if not evidence or len(evidence) < MIN_EVIDENCE_FOR_REPORT:
         topics = set(e.task for e in evidence) if evidence else set()
         return {
@@ -60,11 +57,15 @@ def run_writer(model, question: str, evidence) -> str | dict:
                                    f"Topics covered: {', '.join(topics) if topics else 'none'}"
         }
 
+    # Sort by confidence (highest first) so strongest evidence is prioritized
+    sorted_evidence = sorted(evidence, key=lambda e: e.confidence, reverse=True)
+
     # Build evidence list for the prompt
     evidence_list = ""
-    for e in evidence:
+    for e in sorted_evidence:
+        conf_label = "high" if e.confidence >= 0.75 else "medium" if e.confidence >= 0.5 else "low"
         evidence_list += (
-            f"\n[{e.id}] Claim: {e.claim}"
+            f"\n[{e.id}] (confidence: {conf_label}) Claim: {e.claim}"
             f"\n    Source: {e.source_title} ({e.source_type})"
             f"\n    Quote: \"{e.quote[:300]}\""
             f"\n    URL: {e.source_url}\n"
@@ -91,7 +92,13 @@ def run_writer(model, question: str, evidence) -> str | dict:
     if references:
         report = report.rstrip() + "\n\n" + references
 
-    return report
+    return {
+        "report": report,
+        "citation_coverage": coverage,
+        "invalid_citations": invalid_citations,
+        "input_tokens": resp.input_tokens,
+        "output_tokens": resp.output_tokens,
+    }
 
 
 def _strip_invalid_citations(report: str, valid_ids: set[str]) -> tuple[str, list[str]]:
@@ -150,57 +157,3 @@ def _compute_citation_coverage(report: str) -> float:
 
     cited = sum(1 for s in factual if re.search(r"\[E\d+\]", s))
     return round(cited / len(factual), 3)
-
-
-# --- v1 compatibility ---
-
-def _write_from_papers(model, question: str, papers: list[dict]) -> str:
-    """v1 compatibility: write from paper dicts."""
-    paper_list = ""
-    for i, p in enumerate(papers, 1):
-        authors = p.get("authors", "Unknown")
-        year = p.get("year", "?")
-        citations = p.get("citations", "")
-        cite_str = f" | Citations: {citations}" if citations else ""
-        paper_list += (
-            f"\n[{i}] {p['title']}"
-            f"\n    Authors: {authors} | Year: {year}{cite_str}"
-            f"\n    URL: {p.get('url', 'N/A')}"
-            f"\n    Abstract: {p.get('abstract', '')[:300]}\n"
-        )
-
-    prompt = (
-        f"Research question: {question}\n\n"
-        f"Papers to synthesise ({len(papers)} total):\n{paper_list}\n\n"
-        f"Write the research report now."
-    )
-
-    old_system = """You are a research report writer. Given a research question and a set of papers, write a clear, structured report.
-
-Format:
-## Overview
-Brief answer to the research question (2-3 sentences)
-
-## Key Findings
-- Finding 1 [Paper Title]
-- Finding 2 [Paper Title]
-- ...
-
-## Approaches Compared
-Brief comparison of different approaches found
-
-## Gaps & Open Questions
-What's still missing or uncertain
-
-## References
-Numbered list of papers with titles and URLs
-
-Rules:
-- Cite paper titles in brackets when making claims
-- Be concise - each section should be 3-5 sentences max
-- Only state what the papers support - don't make things up
-- If papers are insufficient, say so honestly"""
-
-    messages = [{"role": "user", "text": prompt}]
-    resp = model.call(old_system, messages)
-    return resp.text

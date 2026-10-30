@@ -42,8 +42,8 @@ def test_add_returns_id():
 
 def test_add_sequential_ids():
     store = EvidenceStore()
-    e1 = store.add("claim 1", "t", "http://a", "arxiv", "q1", "paper_agent", "task")
-    e2 = store.add("claim 2", "t", "http://b", "arxiv", "q2", "paper_agent", "task")
+    e1 = store.add("Transformers use self-attention mechanisms", "t", "http://a", "arxiv", "q1", "paper_agent", "task")
+    e2 = store.add("RLHF improves language model alignment", "t", "http://b", "arxiv", "q2", "paper_agent", "task")
     assert e1 == "E1"
     assert e2 == "E2"
     assert len(store) == 2
@@ -80,13 +80,40 @@ def test_duplicate_claim_case_insensitive():
     assert len(store) == 1
 
 
-def test_same_claim_different_source_allowed():
+def test_same_claim_different_source_rejected_by_semantic_dedup():
+    """Identical claims from different sources are rejected by semantic dedup."""
     store = EvidenceStore()
     e1 = store.add("LLMs hallucinate", "Paper A", "http://a", "arxiv", "q", "paper_agent", "t")
     e2 = store.add("LLMs hallucinate", "Paper B", "http://b", "arxiv", "q", "paper_agent", "t")
     assert e1 == "E1"
+    assert e2 is None  # semantically identical → rejected
+    assert len(store) == 1
+
+
+def test_different_claims_both_added():
+    """Genuinely different claims from different sources are both kept."""
+    store = EvidenceStore()
+    e1 = store.add("Transformers use self-attention", "Paper A", "http://a", "arxiv", "q", "paper_agent", "t")
+    e2 = store.add("RLHF reduces harmful outputs in chatbots", "Paper B", "http://b", "arxiv", "q", "paper_agent", "t")
+    assert e1 == "E1"
     assert e2 == "E2"
     assert len(store) == 2
+
+
+def test_semantic_dedup_catches_near_identical():
+    """Near-identical claims with trivial differences are caught by semantic dedup."""
+    store = EvidenceStore()
+    e1 = store.add(
+        "Deep reinforcement learning achieves superhuman control in Atari games",
+        "Paper A", "http://a", "arxiv", "q", "paper_agent", "t"
+    )
+    e2 = store.add(
+        "Deep reinforcement learning achieves superhuman control in Atari video games",
+        "Paper B", "http://b", "arxiv", "q", "paper_agent", "t"
+    )
+    assert e1 == "E1"
+    assert e2 is None  # near-identical → rejected
+    assert len(store) == 1
 
 
 # --- Status transitions ---
@@ -178,6 +205,60 @@ def test_summary_for_supervisor_contains_counts():
     assert "1 unverified" in summary
     assert "[E1]" in summary
     assert "[E2]" in summary
+
+
+# --- Confidence scoring ---
+
+def test_confidence_supported_academic_long_quote():
+    """Supported evidence from arxiv with a long quote should get high confidence."""
+    ev = Evidence(
+        id="E1", claim="Transformers use self-attention", source_title="Paper",
+        source_url="http://a", source_type="arxiv",
+        quote="Transformers use self-attention mechanisms which allow the model to attend to all positions in the input sequence simultaneously",
+        found_by="paper_agent", task="task", status="supported",
+    )
+    conf = ev.compute_confidence()
+    assert conf >= 0.75  # base 0.6 + quote bonus + academic bonus
+
+
+def test_confidence_supported_web_short_quote():
+    """Supported evidence from web with a short quote gets moderate confidence."""
+    ev = Evidence(
+        id="E1", claim="LLMs are useful", source_title="Blog",
+        source_url="http://b", source_type="web",
+        quote="LLMs are useful for many tasks",
+        found_by="web_agent", task="task", status="supported",
+    )
+    conf = ev.compute_confidence()
+    assert 0.6 <= conf < 0.75  # base 0.6 + small web bonus, no quote bonus
+
+
+def test_confidence_unsupported_is_zero():
+    ev = Evidence(
+        id="E1", claim="claim", source_title="t", source_url="http://a",
+        source_type="arxiv", quote="quote", found_by="paper_agent",
+        task="task", status="unsupported",
+    )
+    assert ev.compute_confidence() == 0.0
+
+
+def test_confidence_unverified_is_low():
+    ev = Evidence(
+        id="E1", claim="claim", source_title="t", source_url="http://a",
+        source_type="arxiv", quote="quote", found_by="paper_agent",
+        task="task", status="unverified",
+    )
+    assert ev.compute_confidence() == 0.1
+
+
+def test_confidence_persists_after_compute():
+    ev = Evidence(
+        id="E1", claim="claim", source_title="t", source_url="http://a",
+        source_type="arxiv", quote="A reasonably long quote about the topic",
+        found_by="paper_agent", task="task", status="supported",
+    )
+    ev.compute_confidence()
+    assert ev.confidence > 0.0
 
 
 def test_summary_no_raw_source_text():

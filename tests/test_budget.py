@@ -34,8 +34,8 @@ def test_budget_cost_limit():
 def test_budget_cost_calculation():
     b = Budget()
     b.record_tokens(1_000_000, 0)  # 1M input tokens
-    # With default PRICE_PER_1M_INPUT = 0.10
-    assert abs(b.cost_usd - 0.10) < 0.001
+    # With default PRICE_PER_1M_INPUT = 0.75 (Gemini 3.8 Flash)
+    assert abs(b.cost_usd - 0.75) < 0.001
 
 
 def test_budget_remaining_summary():

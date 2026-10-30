@@ -8,6 +8,7 @@ import json
 import re
 
 from agents.react_loop import run_react
+from agents.source_enrichment import enrich_sources
 from evidence import EvidenceStore
 from llm import strip_json_fences
 from tools.registry import WEB_AGENT_TOOLS
@@ -84,8 +85,22 @@ def run_web_agent(
                     if len(text) > len(source_texts.get(url, "")):
                         source_texts[url] = text
 
+    # Enrich — fetch full page text for URLs with only short snippets
+    if execute_fn is not None:
+        enrich_fn = execute_fn
+    else:
+        import tools.registry as registry
+        enrich_fn = registry.execute_tool
+    enrichment = enrich_sources(
+        source_texts=source_texts,
+        valid_urls=valid_urls,
+        execute_fn=enrich_fn,
+        budget_calls_remaining=max(0, max_tool_calls - react_result["stats"]["calls_used"]),
+    )
+    source_texts = enrichment["source_texts"]
+
     # Extraction call
-    tool_summary = _build_tool_summary(react_result["tool_results"])
+    tool_summary = _build_tool_summary(react_result["tool_results"], source_texts)
     extraction_messages = [{"role": "user", "text": f"Task: {task}\n\nSearch results:\n{tool_summary}"}]
     extract_resp = model.call(EXTRACTION_PROMPT, extraction_messages, json_mode=True)
 
@@ -155,16 +170,21 @@ def run_web_agent(
     }
 
 
-def _build_tool_summary(tool_results: list[dict]) -> str:
+def _build_tool_summary(tool_results: list[dict], source_texts: dict[str, str] | None = None) -> str:
+    source_texts = source_texts or {}
     lines = []
     for tr in tool_results:
         if "result" in tr and isinstance(tr["result"], list):
             for item in tr["result"]:
                 title = item.get("title", "Unknown")
-                content = item.get("abstract", item.get("content", ""))[:400]
                 url = item.get("url", "")
                 source = item.get("source", "")
-                lines.append(f"[{source}] {title}\nURL: {url}\n{content}\n")
+                enriched = source_texts.get(url, "")
+                if len(enriched) > 500:
+                    text = enriched[:2000]
+                else:
+                    text = item.get("abstract", item.get("content", ""))[:400]
+                lines.append(f"[{source}] {title}\nURL: {url}\n{text}\n")
         elif "error" in tr:
             lines.append(f"[error] {tr['tool']}: {tr['error']}\n")
     return "\n".join(lines)

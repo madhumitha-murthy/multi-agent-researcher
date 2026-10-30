@@ -1,4 +1,4 @@
-# eval/run_eval.py - Run evaluation questions and compute metrics
+# eval/run_eval.py - Run evaluation questions and compute metrics (v2)
 # Usage: python -m eval.run_eval
 
 import json
@@ -14,31 +14,34 @@ RESULTS_DIR = Path(__file__).parent.parent / "results"
 
 
 def compute_metrics(records: list[dict]) -> dict:
+    """Compute aggregate metrics from v2 evaluation records."""
     completed = [r for r in records if not r.get("error")]
-    with_papers = [r for r in completed if r["n_papers"] > 0]
-    multi_source = [r for r in completed if r.get("expect_multi_source")]
-
-    grounded_runs = [r for r in completed if r.get("grounding_score", 0) > 0]
+    with_claims = [r for r in completed if r["supported_claims"] > 0]
 
     return {
         "questions": len(records),
         "completed": len(completed),
         "errors": len(records) - len(completed),
-        "avg_papers": round(mean(r["n_papers"] for r in completed), 1) if completed else 0,
+        "avg_supported_claims": round(mean(r["supported_claims"] for r in completed), 1) if completed else 0,
+        "avg_total_claims": round(mean(r["total_claims"] for r in completed), 1) if completed else 0,
+        "claims_found_rate": round(len(with_claims) / len(completed), 3) if completed else 0,
+        "avg_supervisor_turns": round(mean(r["supervisor_turns"] for r in completed), 1) if completed else 0,
         "avg_latency_s": round(mean(r["latency_s"] for r in completed), 1) if completed else 0,
-        "avg_critic_rounds": round(mean(r["critic_rounds"] for r in completed), 2) if completed else 0,
-        "papers_found_rate": round(len(with_papers) / len(completed), 3) if completed else 0,
-        "multi_source_rate": round(
-            sum(1 for r in multi_source if r["has_both_sources"]) / len(multi_source), 3
-        ) if multi_source else 0,
         "avg_report_length": round(mean(r["report_length"] for r in completed), 0) if completed else 0,
-        "avg_grounding_score": round(mean(r["grounding_score"] for r in grounded_runs), 3) if grounded_runs else 0,
-        "grounded_rate": round(sum(1 for r in completed if r.get("grounded")) / len(completed), 3) if completed else 0,
-        "total_tool_errors": sum(r.get("tool_errors", 0) for r in completed),
-        "avg_total_tokens": round(mean(
-            r.get("token_usage", {}).get("total", 0) for r in completed
-        ), 0) if completed else 0,
+        "avg_cost_usd": round(mean(r["cost_usd"] for r in completed), 4) if completed else 0,
+        "avg_citation_coverage": round(mean(
+            r["citation_coverage"] for r in completed if r.get("citation_coverage") is not None
+        ), 3) if any(r.get("citation_coverage") is not None for r in completed) else 0,
+        "finish_reasons": _count_values(completed, "stop_reason"),
     }
+
+
+def _count_values(records: list[dict], key: str) -> dict:
+    counts: dict[str, int] = {}
+    for r in records:
+        val = r.get(key, "unknown")
+        counts[val] = counts.get(val, 0) + 1
+    return counts
 
 
 def main():
@@ -54,35 +57,45 @@ def main():
     for i, q in enumerate(questions, 1):
         print(f"[eval] {i}/{len(questions)} {q['id']}: {q['question'][:60]}...")
         record = {
-            **q, "n_papers": 0, "critic_rounds": 0, "latency_s": 0,
-            "report_length": 0, "has_both_sources": False,
-            "grounding_score": 0.0, "grounded": False,
-            "tool_errors": 0, "token_usage": {},
+            **q, "supported_claims": 0, "total_claims": 0,
+            "supervisor_turns": 0, "latency_s": 0,
+            "report_length": 0, "stop_reason": "",
+            "cost_usd": 0.0, "citation_coverage": None,
             "error": None,
         }
 
         try:
             result = run_research(graph, q["question"])
-            sources = {p.get("source") for p in result["papers"]}
-            grounding = result.get("grounding", {})
+            budget = result.get("budget", {})
+
+            # Extract citation_coverage from the writer trace entry
+            citation_cov = None
+            for entry in reversed(result.get("trace", [])):
+                if entry.get("agent") == "writer" and "citation_coverage" in entry:
+                    citation_cov = entry["citation_coverage"]
+                    break
+
             record.update({
-                "n_papers": len(result["papers"]),
-                "critic_rounds": result["critic_rounds"],
+                "supported_claims": result["supported_claims"],
+                "total_claims": result["total_claims"],
+                "supervisor_turns": result["supervisor_turns"],
                 "latency_s": result["latency_s"],
                 "report_length": len(result["report"]),
-                "has_both_sources": "arxiv" in sources and "semantic_scholar" in sources,
-                "grounding_score": grounding.get("supported_fraction", 0.0),
-                "grounded": grounding.get("grounded", False),
-                "tool_errors": result.get("tool_errors", 0),
-                "token_usage": result.get("token_usage", {}),
+                "stop_reason": result["stop_reason"],
+                "cost_usd": budget.get("cost_usd", 0),
+                "citation_coverage": citation_cov,
             })
         except Exception as e:
             record["error"] = str(e)[:200]
             print(f"  error: {record['error']}")
 
         records.append(record)
-        print(f"  -> {record['n_papers']} papers, {record['critic_rounds']} critic rounds, {record['latency_s']}s")
-        time.sleep(5)
+        print(
+            f"  -> {record['supported_claims']}/{record['total_claims']} claims, "
+            f"{record['supervisor_turns']} turns, {record['latency_s']}s, "
+            f"${record['cost_usd']:.4f}"
+        )
+        time.sleep(2)
 
     metrics = {
         "run_at": datetime.now(timezone.utc).isoformat(),

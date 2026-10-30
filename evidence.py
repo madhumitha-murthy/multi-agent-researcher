@@ -1,9 +1,12 @@
 # evidence.py - Evidence dataclass + EvidenceStore
 # The single source of truth for all claims collected during research.
 
-from dataclasses import dataclass, field, asdict
-from typing import Optional
 import re
+from dataclasses import asdict, dataclass
+from typing import Optional
+
+# Semantic dedup threshold — claims with cosine similarity above this are duplicates
+SEMANTIC_DEDUP_THRESHOLD = 0.85
 
 
 @dataclass
@@ -18,6 +21,43 @@ class Evidence:
     task: str               # the task the worker was given
     status: str = "unverified"   # "unverified" | "supported" | "unsupported" | "contradicted"
     checker_note: str = ""
+    confidence: float = 0.0  # 0.0–1.0, computed after fact-checking
+
+    def compute_confidence(self) -> float:
+        """Compute confidence score based on status, quote length, and source type.
+
+        Factors:
+        - Status: supported=base 0.6, unsupported/contradicted=0.0, unverified=0.1
+        - Quote length: longer quotes are more specific (up to +0.2)
+        - Source type: academic sources get a bonus (up to +0.2)
+        """
+        if self.status in ("unsupported", "contradicted"):
+            self.confidence = 0.0
+            return 0.0
+        if self.status == "unverified":
+            self.confidence = 0.1
+            return 0.1
+
+        # Base score for supported evidence
+        score = 0.6
+
+        # Quote length bonus: 0–0.2 scaled by quote length (50–200 chars range)
+        qlen = len(self.quote)
+        quote_bonus = min(0.2, max(0.0, (qlen - 50) / 750))
+        score += quote_bonus
+
+        # Source type bonus
+        source_bonus = {
+            "arxiv": 0.2,
+            "semantic_scholar": 0.2,
+            "github": 0.1,
+            "web": 0.05,
+            "web_page": 0.05,
+        }.get(self.source_type, 0.0)
+        score += source_bonus
+
+        self.confidence = round(min(1.0, score), 3)
+        return self.confidence
 
 
 class EvidenceStore:
@@ -28,14 +68,28 @@ class EvidenceStore:
         self._next_id: int = 1
 
     def add(self, claim: str, source_title: str, source_url: str,
-            source_type: str, quote: str, found_by: str, task: str) -> Optional[str]:
-        """Add evidence. Returns assigned ID, or None if duplicate."""
-        # Reject exact-duplicate claims from the same source
+            source_type: str, quote: str, found_by: str, task: str,
+            semantic_dedup: bool = True) -> Optional[str]:
+        """Add evidence. Returns assigned ID, or None if duplicate.
+
+        Dedup is two-tier:
+        1. Exact match: same normalised claim text + same source URL → reject
+        2. Semantic match: cosine similarity > 0.85 with any existing claim → reject
+        """
         norm_claim = _normalise(claim)
         norm_url = source_url.strip()
+
         for existing in self._items:
+            # Tier 1: exact claim + same source
             if _normalise(existing.claim) == norm_claim and existing.source_url.strip() == norm_url:
                 return None
+
+        # Tier 2: semantic similarity across all existing claims
+        if semantic_dedup and self._items:
+            for existing in self._items:
+                sim = claim_similarity(claim, existing.claim)
+                if sim >= SEMANTIC_DEDUP_THRESHOLD:
+                    return None
 
         eid = f"E{self._next_id}"
         self._next_id += 1
@@ -117,3 +171,32 @@ class EvidenceStore:
 def _normalise(text: str) -> str:
     """Normalise for deduplication: lowercase, collapse whitespace."""
     return re.sub(r"\s+", " ", text.strip().lower())
+
+
+# --- Semantic similarity for dedup ---
+
+_embedding_model = None
+
+
+def _get_embedding_model():
+    """Lazy-load sentence-transformers model (cached after first call)."""
+    global _embedding_model
+    if _embedding_model is None:
+        try:
+            from sentence_transformers import SentenceTransformer
+            _embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+        except ImportError:
+            return None
+    return _embedding_model
+
+
+def claim_similarity(claim_a: str, claim_b: str) -> float:
+    """Compute cosine similarity between two claim strings.
+
+    Returns 0.0 if sentence-transformers is not available.
+    """
+    model = _get_embedding_model()
+    if model is None:
+        return 0.0
+    embeddings = model.encode([claim_a, claim_b], normalize_embeddings=True)
+    return float(embeddings[0] @ embeddings[1])
