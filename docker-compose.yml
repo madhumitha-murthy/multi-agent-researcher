@@ -1,0 +1,25 @@
+services:
+
+  gateway:
+    build: .
+    container_name: research-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-production-secret-change-me}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/research/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mcp-server:
+    build: .
+    container_name: research-mcp
+    command: ["python", "-m", "research_platform.mcp_server"]
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+    stdin_open: true

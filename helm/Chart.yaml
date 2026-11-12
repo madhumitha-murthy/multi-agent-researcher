@@ -1,0 +1,6 @@
+apiVersion: v2
+name: multi-agent-researcher
+description: Multi-agent research platform with OAuth2, RBAC, and MCP
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

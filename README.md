@@ -1,6 +1,6 @@
 # Multi-Agent Researcher
 
-A supervisor-based multi-agent system that autonomously researches any topic using academic and web sources. Built with LangGraph and Gemini.
+A supervisor-based multi-agent system that autonomously researches any topic using academic and web sources. Built with LangGraph and Gemini, with a production-ready platform layer: OAuth2/JWT authentication, RBAC, agent registry, MCP server, and Kubernetes-ready deployment.
 
 ```
 Question → Supervisor ←→ Workers (paper_agent, web_agent, fact_checker, writer) → Report
@@ -110,15 +110,123 @@ multi-agent-researcher/
 │   ├── web_search.py              # DuckDuckGo web search
 │   ├── github_search.py           # GitHub REST API search
 │   └── url_reader.py              # URL fetching with safety checks
+├── research_platform/
+│   ├── gateway.py                 # FastAPI API gateway (OAuth2, RBAC, rate limiting)
+│   ├── auth.py                    # JWT tokens, OAuth2 flows, RBAC, agent identity
+│   ├── agent_registry.py          # Agent registry: register, discover, health-check
+│   ├── mcp_server.py              # MCP server exposing agents as tools
+│   └── logging_config.py          # Structured JSON logging with correlation IDs
+├── helm/                          # Kubernetes Helm chart (IaC)
+│   ├── Chart.yaml
+│   ├── values.yaml
+│   └── templates/                 # Deployment, Service, Ingress, Secrets
+├── gitops/
+│   └── argocd-application.yaml    # ArgoCD GitOps manifest
 ├── baselines/pipeline/            # v1 pipeline code (planner→collector→critic→writer)
 ├── eval/
 │   ├── questions.json             # Evaluation questions
 │   └── run_eval.py                # Batch evaluation with v2 metrics
-├── tests/                         # 120 tests across 7 test files
+├── tests/                         # 154 tests across 8 test files
 ├── results/                       # Example outputs from real runs
+├── Dockerfile
+├── docker-compose.yml
+├── .github/workflows/ci.yml       # GitHub Actions CI pipeline
 ├── requirements.txt
 └── pyproject.toml
 ```
+
+## Platform Layer
+
+The `research_platform/` package adds production-ready infrastructure to the multi-agent system.
+
+### API Gateway (`research_platform/gateway.py`)
+
+FastAPI-based API gateway with OAuth2 authentication, RBAC, and rate limiting.
+
+```bash
+# Start the gateway
+uvicorn research_platform.gateway:app --port 8080
+
+# Or with Docker
+docker compose up gateway
+```
+
+**Authentication:**
+```bash
+# Get a JWT token (OAuth2 password flow)
+TOKEN=$(curl -s -X POST http://localhost:8080/auth/token \
+  -d "username=researcher&password=researcher" | jq -r .access_token)
+
+# Use the token
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/agents
+```
+
+**Endpoints:**
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/auth/token` | None | OAuth2 login, returns JWT |
+| GET | `/auth/me` | Bearer | Current user info |
+| POST | `/api/research` | researcher+ | Start a research task |
+| GET | `/api/agents` | viewer+ | List registered agents |
+| GET | `/api/agents/{id}` | viewer+ | Get agent details |
+| POST | `/api/agents` | admin | Register a new agent |
+| DELETE | `/api/agents/{id}` | admin | Deregister an agent |
+| POST | `/api/agents/{id}/heartbeat` | any | Agent health heartbeat |
+| GET | `/api/agents/discover/{cap}` | viewer+ | Discover agents by capability |
+| POST | `/api/agent-identities` | admin | Create agent service account |
+| GET | `/api/research/health` | None | Health check |
+
+**RBAC roles:** `admin` (full access), `researcher` (research + view), `viewer` (read-only).
+
+### Agent Registry (`research_platform/agent_registry.py`)
+
+Dynamic agent registry with health checking. Agents register their capabilities and tools, and clients discover them at runtime.
+
+### Agent Identity (`research_platform/auth.py`)
+
+Each agent gets a service account with a signed JWT. Agent tokens include `is_agent: true` and role-scoped permissions, enabling machine-to-machine authentication.
+
+### MCP Server (`research_platform/mcp_server.py`)
+
+[Model Context Protocol](https://modelcontextprotocol.io/) server that exposes research agents as MCP tools. Any MCP-compatible client (Claude Desktop, VS Code, etc.) can invoke the research pipeline.
+
+```bash
+# Run MCP server (stdio transport)
+python -m research_platform.mcp_server
+```
+
+**MCP Tools:**
+- `research` — Run a full multi-agent research pipeline
+- `search_papers` — Search ArXiv and Semantic Scholar
+- `search_web_and_github` — Search the web and GitHub
+- `list_agents` — List registered agents
+- `agent_health` — Check agent health status
+
+### Structured Logging
+
+JSON-formatted logs with correlation IDs that propagate across async calls, enabling distributed tracing.
+
+### Deployment
+
+**Docker:**
+```bash
+docker compose up --build
+```
+
+**Kubernetes (Helm):**
+```bash
+helm install researcher ./helm \
+  --set secrets.geminiApiKey=$GEMINI_API_KEY \
+  --set secrets.jwtSecretKey=$(openssl rand -hex 32)
+```
+
+**GitOps (ArgoCD):**
+```bash
+kubectl apply -f gitops/argocd-application.yaml
+```
+
+---
 
 ## Tests
 
@@ -126,7 +234,7 @@ multi-agent-researcher/
 python -m pytest tests/ -v
 ```
 
-120 tests covering:
+154 tests covering:
 - **Supervisor**: routing decisions, budget guards, invalid JSON fallback, FINISH-after-report guard
 - **Paper/Web agents**: evidence extraction, quote validation, fabricated quote rejection, URL validation
 - **Fact checker**: quote-in-source matching, LLM entailment batching, status transitions
@@ -136,6 +244,10 @@ python -m pytest tests/ -v
 - **Budget**: turn/cost limits, token tracking, exhaustion detection
 - **Graph integration**: full scripted run, worker crash recovery, prompt injection resistance, FINISH after report
 - **ReAct loop**: tool call budget, error tracking, URL tracking, untrusted content wrapping
+- **Platform — Auth**: JWT creation/validation, password hashing, role-based permissions, agent identity tokens
+- **Platform — Registry**: agent registration, deregistration, discovery by capability/tool, heartbeat timeout
+- **Platform — Gateway**: OAuth2 login, RBAC enforcement (admin/researcher/viewer), correlation IDs, 401/403 responses
+- **Platform — Logging**: correlation ID generation and propagation
 
 All tests use `FakeModel` — no API calls needed.
 
@@ -149,7 +261,14 @@ All tests use `FakeModel` — no API calls needed.
 | Web Search | DuckDuckGo (no API key) |
 | Code Search | GitHub REST API |
 | URL Parsing | BeautifulSoup4 |
-| Testing | pytest with FakeModel (scripted responses) |
+| API Gateway | FastAPI with OAuth2/JWT, RBAC, rate limiting |
+| Authentication | OAuth2 password flow, JWT (python-jose), bcrypt |
+| Agent Protocol | MCP (Model Context Protocol) server |
+| Containerisation | Docker, Docker Compose |
+| Infrastructure | Helm chart (Kubernetes), ArgoCD (GitOps) |
+| CI/CD | GitHub Actions (test + lint + Docker build) |
+| Logging | Structured JSON with correlation IDs |
+| Testing | pytest with FakeModel (scripted responses), 154 tests |
 
 ## Configuration
 
