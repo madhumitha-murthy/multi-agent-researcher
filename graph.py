@@ -2,11 +2,15 @@
 #
 # Pattern: hub-and-spoke. Workers always return to the supervisor.
 # The supervisor never sees raw source text, only structured evidence summaries.
+# Human-in-the-loop: graph pauses before publishing a report for admin approval.
 
 import time
 from typing import Any, TypedDict
+from uuid import uuid4
 
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
+from langgraph.types import Command, interrupt
 
 from agents.fact_checker import run_fact_checker
 from agents.paper_agent import run_paper_agent
@@ -30,14 +34,17 @@ class ResearchState(TypedDict):
     trace: list[dict]
     stop_reason: str            # "finished" | "turn_limit" | "cost_limit" | "error"
     source_texts: dict          # url -> text, accumulated from workers
+    approval_status: str        # "" | "pending" | "approved" | "rejected"
+    approval_feedback: str      # reviewer feedback (on reject)
 
 
-def build_graph(model, execute_fn=None):
+def build_graph(model, execute_fn=None, checkpointer=None):
     """Build the supervisor-routed multi-agent graph.
 
     Args:
         model: ChatModel or FakeModel
         execute_fn: optional tool execution override (for testing)
+        checkpointer: LangGraph checkpointer for state persistence (default: MemorySaver)
     """
 
     def supervisor_node(state: ResearchState) -> dict:
@@ -322,13 +329,58 @@ def build_graph(model, execute_fn=None):
             }],
         }
 
+    def approval_gate_node(state: ResearchState) -> dict:
+        """Pause for human review before publishing the report."""
+        store = EvidenceStore.from_dict(state["evidence"])
+        decision = interrupt({
+            "type": "approval_required",
+            "report": state["report"],
+            "question": state["question"],
+            "supported_claims": len(store.supported()),
+            "total_claims": len(store),
+        })
+
+        action = decision.get("action", "approve") if isinstance(decision, dict) else "approve"
+        feedback = decision.get("feedback", "") if isinstance(decision, dict) else ""
+
+        if action == "approve":
+            return {
+                "approval_status": "approved",
+                "approval_feedback": "",
+                "stop_reason": "finished",
+                "trace": state["trace"] + [{
+                    "agent": "approval_gate", "action": "approved",
+                }],
+            }
+        else:
+            # Rejected: clear report so supervisor doesn't auto-FINISH
+            return {
+                "approval_status": "rejected",
+                "approval_feedback": feedback,
+                "report": "",
+                "stop_reason": "",
+                "trace": state["trace"] + [{
+                    "agent": "approval_gate", "action": "rejected",
+                    "feedback": feedback,
+                }],
+            }
+
     def route_after_supervisor(state: ResearchState) -> str:
         agent = state.get("next_agent", "FINISH")
         if agent == "FINISH":
+            # If a report exists, route to approval gate instead of ending
+            if state.get("report"):
+                return "approval_gate"
             return END
         if agent in ("paper_agent", "web_agent", "fact_checker", "writer"):
             return agent
         return END  # safety fallback
+
+    def route_after_approval(state: ResearchState) -> str:
+        if state.get("approval_status") == "approved":
+            return END
+        # Rejected — loop back to supervisor for revisions
+        return "supervisor"
 
     # Wire the graph
     g = StateGraph(ResearchState)
@@ -337,22 +389,65 @@ def build_graph(model, execute_fn=None):
     g.add_node("web_agent", web_agent_node)
     g.add_node("fact_checker", fact_checker_node)
     g.add_node("writer", writer_node)
+    g.add_node("approval_gate", approval_gate_node)
 
     g.add_edge(START, "supervisor")
     g.add_conditional_edges("supervisor", route_after_supervisor)
+    g.add_conditional_edges("approval_gate", route_after_approval)
 
     # Workers always return to supervisor
     for worker in ("paper_agent", "web_agent", "fact_checker", "writer"):
         g.add_edge(worker, "supervisor")
 
-    return g.compile()
+    checkpointer = checkpointer if checkpointer is not None else MemorySaver()
+    return g.compile(checkpointer=checkpointer)
 
 
-def run_research(graph, question: str) -> dict[str, Any]:
-    """Run the full supervisor-based research pipeline."""
+def _make_config(thread_id: str | None = None) -> dict:
+    tid = thread_id or str(uuid4())
+    return {
+        "recursion_limit": 2 * MAX_SUPERVISOR_TURNS + 10,
+        "configurable": {"thread_id": tid},
+    }
+
+
+def _format_result(state: dict, question: str, latency: float) -> dict[str, Any]:
+    final_store = EvidenceStore.from_dict(state["evidence"])
+    final_budget = Budget.from_dict(state["budget"])
+    return {
+        "question": question,
+        "report": state["report"],
+        "evidence": state["evidence"],
+        "supported_claims": len(final_store.supported()),
+        "total_claims": len(final_store),
+        "supervisor_turns": state["supervisor_turns"],
+        "stop_reason": state.get("stop_reason") or "finished",
+        "approval_status": state.get("approval_status", ""),
+        "budget": final_budget.to_dict(),
+        "trace": state["trace"],
+        "worker_log": state["worker_log"],
+        "latency_s": latency,
+    }
+
+
+def _is_paused(graph, config: dict) -> bool:
+    """Check if the graph is paused at an interrupt (approval gate)."""
+    snapshot = graph.get_state(config)
+    return bool(snapshot.next)  # non-empty means nodes are waiting to run
+
+
+def run_research(graph, question: str, thread_id: str | None = None) -> dict[str, Any]:
+    """Run the research pipeline. Pauses at the approval gate for human review.
+
+    Returns a result dict. If approval_status is "pending", call
+    resume_research() with the same graph and thread_id to approve or reject.
+    """
     budget = Budget()
     store = EvidenceStore()
     t0 = time.perf_counter()
+
+    config = _make_config(thread_id)
+    thread_id = config["configurable"]["thread_id"]
 
     state = graph.invoke(
         {
@@ -367,23 +462,48 @@ def run_research(graph, question: str) -> dict[str, Any]:
             "trace": [],
             "stop_reason": "",
             "source_texts": {},
+            "approval_status": "",
+            "approval_feedback": "",
         },
-        config={"recursion_limit": 2 * MAX_SUPERVISOR_TURNS + 10},
+        config=config,
     )
 
-    final_store = EvidenceStore.from_dict(state["evidence"])
-    final_budget = Budget.from_dict(state["budget"])
+    latency = round(time.perf_counter() - t0, 2)
+    result = _format_result(state, question, latency)
 
-    return {
-        "question": question,
-        "report": state["report"],
-        "evidence": state["evidence"],
-        "supported_claims": len(final_store.supported()),
-        "total_claims": len(final_store),
-        "supervisor_turns": state["supervisor_turns"],
-        "stop_reason": state.get("stop_reason") or "finished",
-        "budget": final_budget.to_dict(),
-        "trace": state["trace"],
-        "worker_log": state["worker_log"],
-        "latency_s": round(time.perf_counter() - t0, 2),
-    }
+    if _is_paused(graph, config):
+        result["approval_status"] = "pending"
+
+    result["thread_id"] = thread_id
+    return result
+
+
+def resume_research(graph, thread_id: str, action: str,
+                    feedback: str = "") -> dict[str, Any]:
+    """Resume the graph after human review.
+
+    Args:
+        graph: compiled graph (same instance used for run_research)
+        thread_id: the thread_id from the paused run
+        action: "approve" or "reject"
+        feedback: reviewer feedback (used when action is "reject")
+
+    Returns:
+        Updated result dict.
+    """
+    config = _make_config(thread_id)
+    t0 = time.perf_counter()
+
+    state = graph.invoke(
+        Command(resume={"action": action, "feedback": feedback}),
+        config=config,
+    )
+
+    latency = round(time.perf_counter() - t0, 2)
+    result = _format_result(state, state["question"], latency)
+
+    if _is_paused(graph, config):
+        result["approval_status"] = "pending"
+
+    result["thread_id"] = thread_id
+    return result

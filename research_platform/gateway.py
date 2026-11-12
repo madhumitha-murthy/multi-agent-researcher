@@ -103,6 +103,11 @@ class ResearchRequest(BaseModel):
     question: str
 
 
+class ApprovalRequest(BaseModel):
+    action: str  # "approve" or "reject"
+    feedback: str = ""
+
+
 class AgentRegisterRequest(BaseModel):
     agent_id: str
     name: str
@@ -218,12 +223,20 @@ async def get_me(user: TokenData = Depends(get_current_user)):
 
 # ==================== RESEARCH ENDPOINTS ====================
 
+# In-memory store for active research tasks pending approval
+_active_tasks: dict[str, dict] = {}  # thread_id -> {"graph": ..., "result": ...}
+
+
 @app.post("/api/research")
 async def start_research(
     req: ResearchRequest,
     user: TokenData = Depends(require_permission("research")),
 ):
-    """Start a research task (requires 'research' permission)."""
+    """Start a research task. Returns immediately when report is ready for review.
+
+    The graph pauses at the approval gate. Use /api/research/{thread_id}/approve
+    or /api/research/{thread_id}/reject to continue.
+    """
     from dotenv import load_dotenv
     load_dotenv()
 
@@ -239,10 +252,18 @@ async def start_research(
     graph = build_graph(model)
     result = run_research(graph, req.question)
 
-    logger.info(
-        f"Research completed: {result['stop_reason']}",
-        extra={"user": user.sub, "action": "research_complete"},
-    )
+    if result.get("approval_status") == "pending":
+        _active_tasks[result["thread_id"]] = {"graph": graph, "result": result}
+        logger.info(
+            f"Research paused for approval: {result['thread_id']}",
+            extra={"user": user.sub, "action": "approval_pending"},
+        )
+    else:
+        logger.info(
+            f"Research completed: {result['stop_reason']}",
+            extra={"user": user.sub, "action": "research_complete"},
+        )
+
     return result
 
 
@@ -256,6 +277,77 @@ async def research_health():
         "agents": health,
         "registry": registry.to_dict(),
     }
+
+
+@app.get("/api/research/{thread_id}")
+async def get_research_status(
+    thread_id: str,
+    user: TokenData = Depends(require_permission("view")),
+):
+    """Get the current status of a research task."""
+    task = _active_tasks.get(thread_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found or already completed")
+    return task["result"]
+
+
+@app.post("/api/research/{thread_id}/approve")
+async def approve_research(
+    thread_id: str,
+    user: TokenData = Depends(require_permission("manage_agents")),
+):
+    """Approve a pending report for publication (admin only)."""
+    from graph import resume_research
+
+    task = _active_tasks.get(thread_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found or already completed")
+
+    result = resume_research(task["graph"], thread_id, action="approve")
+
+    del _active_tasks[thread_id]
+    logger.info(
+        f"Research approved: {thread_id}",
+        extra={"user": user.sub, "action": "research_approved"},
+    )
+    return result
+
+
+@app.post("/api/research/{thread_id}/reject")
+async def reject_research(
+    thread_id: str,
+    req: ApprovalRequest,
+    user: TokenData = Depends(require_permission("manage_agents")),
+):
+    """Reject a pending report with feedback (admin only). The graph resumes
+    and the supervisor can gather more evidence or rewrite.
+    """
+    from graph import resume_research
+
+    task = _active_tasks.get(thread_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found or already completed")
+
+    result = resume_research(
+        task["graph"], thread_id,
+        action="reject", feedback=req.feedback,
+    )
+
+    if result.get("approval_status") == "pending":
+        # Graph paused again at approval gate after revisions
+        _active_tasks[thread_id]["result"] = result
+        logger.info(
+            f"Research revised, pending re-approval: {thread_id}",
+            extra={"user": user.sub, "action": "approval_pending"},
+        )
+    else:
+        del _active_tasks[thread_id]
+        logger.info(
+            f"Research completed after rejection: {thread_id}",
+            extra={"user": user.sub, "action": "research_complete"},
+        )
+
+    return result
 
 
 # ==================== AGENT REGISTRY ENDPOINTS ====================

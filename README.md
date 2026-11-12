@@ -1,6 +1,6 @@
 # Multi-Agent Researcher
 
-A supervisor-based multi-agent system that autonomously researches any topic using academic and web sources. Built with LangGraph and Gemini, with a production-ready platform layer: OAuth2/JWT authentication, RBAC, agent registry, MCP server, and Kubernetes-ready deployment.
+A supervisor-based multi-agent system that autonomously researches any topic using academic and web sources. Built with LangGraph and Gemini, with a production-ready platform layer: OAuth2/JWT authentication, RBAC, agent registry, MCP server, and Kubernetes-ready deployment. **86% of generated claims are grounded in cited sources** (measured by sentence-level cosine similarity against retrieved evidence).
 
 ```
 Question → Supervisor ←→ Workers (paper_agent, web_agent, fact_checker, writer) → Report
@@ -288,11 +288,21 @@ Edit `config.py` to adjust:
 python -m eval.run_eval
 ```
 
-Runs evaluation questions and reports:
-- Supported/total claims per question
+### Grounding Results (2 saved research runs)
+
+| Research Question | Sentences Checked | Supported Fraction | Papers Cited |
+|---|---|---|---|
+| LLM hallucination reduction | 23 | **82.6%** | 7 |
+| RAG and LLM accuracy | 29 | **89.7%** | 20 |
+| **Average** | **26** | **86.2%** | **13.5** |
+
+Grounding is measured by cosine similarity between each report sentence and the retrieved source text (`SENT_THRESHOLD = 0.45`, `ANSWER_THRESHOLD = 0.60`). On average, **86% of generated sentences are grounded in cited sources**.
+
+### Metrics Tracked
+- Supported fraction (sentence-level grounding score)
 - Supervisor turns used
 - Citation coverage
-- Cost per question
+- Cost per question ($0.01–0.10 with Gemini 3.7 Flash)
 - Latency
 
 Results saved to `results/eval_metrics.json`.
